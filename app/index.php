@@ -4,8 +4,8 @@
   }
 </script>
 <?php
-include "./header.php";
 session_start();
+include "./header.php";
 
 //unset($_SESSION['']); // SI JE VEUX CLEAN UNE SESSION QUI N'EST PAS SENSE ETRE LA
 
@@ -121,8 +121,8 @@ else
 //PIERRE
 ?>
 
-<body class="bg-gradient-to-br from-gray-950 via-gray-700 to-gray-400 min-h-screen">
-  <nav class="bg-gray-900 backdrop-blur-sm shadow-xl backdrop-filter bg-opacity-30 sticky top-0 z-50">
+<body class="h-14 bg-linear-to-r from-cyan-500 to-blue-500">
+  <nav class="bg-white/15">
     <div class="max-full mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex justify-between w-full">
