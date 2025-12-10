@@ -129,14 +129,14 @@ else
           <span></span>
           <div class="flex items-baseline space-x-4">
             <!--Button modale rules-->
-            <button command="show-modal" commandfor="rules" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Régle</button>
+            <button command="show-modal" commandfor="rules" class="text-gray-600 hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Régle</button>
             <!--Button modale Leaderboard-->
-            <button command="show-modal" commandfor="leaderboard" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Classement</button>
+            <button command="show-modal" commandfor="leaderboard" class="text-gray-600 hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Classement</button>
             <!---->
             <div>
               <el-dropdown class="relative">
-                <button class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Mode</button>
-                <el-menu anchor="bottom end" popover class="w-56 origin-top-right rounded-md bg-gray-800 outline-1 -outline-offset-1 outline-white/10 transition transition-discrete [--anchor-gap:--spacing(2)] data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in">
+                <button class="text-gray-600 hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Mode</button>
+                <el-menu anchor="bottom end" popover class="w-35 rounded-md bg-blue-600/40 outline-white/10 transition transition-discrete [--anchor-gap:--spacing(1)] data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in">
                   <button class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Classique</button>
                   <button
                     class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Spécial</button>
@@ -165,21 +165,21 @@ else
     </div>
   </nav>
   <form method="POST" action="#">
-    <div class="flex items-center justify-center p-6 mt-16">
+    <div class="flex items-center justify-center p-6 mt-10">
       <div class="max-w-4xl w-full">
-        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-2xl p-8 mb-8 shadow-2xl">
+        <div class="rounded-xl p-8 bg-white/90 backdrop-blur-sm shadow-2xl">
           <div class="text-center">
             <p class="text-4xl text-gray-900 mb-4">Shifumi</p>
           </div>
-          <div class="flex justify-around mb-8 bg-gray-100 rounded-xl p-4">
+          <div class="flex justify-around mb-8 bg-gray-100/100 rounded-xl p-4">
             <div class="text-center" id="player">
-              <p class="text-sm text-gray-700 mb-3">vous</p>
+              <p class="text-sm text-black mb-3">vous</p>
               <p class="text-3x1 font-bold text-blue-700">
                 <?= $_SESSION['nombre_de_victoire'] ?>
               </p>
             </div>
             <div class="text-center" id="robot">
-              <p class="text-sm text-gray-500 mb-3">robot</p>
+              <p class="text-sm text-black mb-3">robot</p>
               <p class="text-sm font-bold text-red-600">
                 <?= $_SESSION['nombre_de_defaite'] ?>
               </p>
@@ -213,15 +213,12 @@ else
 <el-dialog>
   <dialog id="leaderboard" aria-labelledby="dialog-title"
     class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
-
     <el-dialog-backdrop
       class="fixed inset-0 bg-black/90 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
-
     <div tabindex="0"
       class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
       <el-dialog-panel
         class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg data-closed:sm:translate-y-0 data-closed:sm:scale-95">
-
         <div class="bg-gray-900 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
           <div class="text-center sm:text-left">
             <h3 id="dialog-title" class="text-3xl font-extrabold text-white mb-6 flex items-center justify-center">Classement Global</h3>
