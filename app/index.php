@@ -186,7 +186,6 @@ else
             </div>
           </div>
           <div class="grid grid-cols-3 gap-4 mb-6">
-            <!-- <button type="submit" class="btn btn-primary" id="pierre" name="choix" value="pierre">Pierre</button> -->
             <button type="submit" name="choix" value="pierre" command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-stone-400 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
               <span class="text-6xl block mb-2">🪨</span>
               <span class="text-xl font-semibold">Pierre</span>
@@ -366,19 +365,39 @@ else
         <div class="bg-gray-900 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
           <div class="text-center">
             <h3 id="resultat-title" class="text-4xl font-extrabold text-green-400 mb-6" data-result-type="victoire">
-              VICTOIRE !
+              <?= $message_de_victoire ?>
             </h3>
             <div class="flex justify-around items-center space-x-8 mb-8">
               <div class="text-center">
                 <p class="text-lg font-semibold text-gray-300 mb-2">Vous</p>
-                <span id="player-move-display" class="text-8xl block">🪨</span>
-                <p class="text-xl font-bold text-white mt-2">Pierre</p>
+                <span id="player-move-display" class="text-8xl block">
+                  <?php if ($player == 'pierre')
+                    echo "🪨";
+                  elseif ($player == 'feuille')
+                    echo "🍃​";
+                  else
+                    echo "​✂️​"
+                  ?>
+                </span>
+                <p class="text-xl font-bold text-white mt-2">
+                  <?= $player ?>
+                </p>
               </div>
               <span class="text-4xl font-extrabold text-gray-500">VS</span>
               <div class="text-center">
                 <p class="text-lg font-semibold text-gray-300 mb-2">Robot</p>
-                <span id="robot-move-display" class="text-8xl block">🍃</span>
-                <p class="text-xl font-bold text-white mt-2">Feuille</p>
+                <span id="robot-move-display" class="text-8xl block">
+                  <?php if ($choix_hal == 'pierre')
+                    echo "🪨";
+                  elseif ($choix_hal == 'feuille')
+                    echo "🍃​";
+                  else
+                    echo "​✂️​"
+                  ?>
+                </span>
+                <p class="text-xl font-bold text-white mt-2">
+                  <?= $choix_hal ?>
+                </p>
               </div>
             </div>
           </div>
@@ -404,7 +423,7 @@ if (!empty($player)) {
   echo "<script>
     window.addEventListener('DOMContentLoaded', async function() {
       let modal = document.querySelector('#resultat-manche'); 
-      await sleep(1000); 
+      await sleep(100); 
       modal.open=true;
     });
     
