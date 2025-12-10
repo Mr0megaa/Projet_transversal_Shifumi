@@ -1,9 +1,128 @@
+<script>
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+</script>
 <?php
-include "./header.php"
+include "./header.php";
+session_start();
+
+//unset($_SESSION['']); // SI JE VEUX CLEAN UNE SESSION QUI N'EST PAS SENSE ETRE LA
+
+if (!isset($_SESSION['tour'])) {
+  $_SESSION['tour'] = 0;
+}
+if (!isset($_SESSION['hal'])) {
+  $_SESSION['hal'] = NULL;
+}
+if (!isset($_SESSION['joueur'])) {
+  $_SESSION['joueur'] = NULL;
+}
+if (!isset($_SESSION['nombre_de_victoire'])) {
+  $_SESSION['nombre_de_victoire'] = 0;
+}
+if (!isset($_SESSION['nombre_de_defaite'])) {
+  $_SESSION['nombre_de_defaite'] = 0;
+}
+
+$player = $_POST['choix'] ?? NULL;
+$choix_hal = NULL;
+
+$choix = array(
+  'pierre',
+  'feuille',
+  'ciseaux',
+);
+
+$rand = array_rand($choix); //Creation d'un tableau puis array_rand tableau pour le random
+
+$position = ($_SESSION['tour']) % 5;
+if ($position == 0) {
+  $choix_hal = $choix[$rand]; //Tour 1 
+} elseif ($position == 1) {
+  if ($_SESSION['joueur'][$_SESSION['tour'] - 1] == 'pierre')
+    $choix_hal = 'feuille';
+  elseif ($_SESSION['joueur'][$_SESSION['tour'] - 1] == 'feuille')
+    $choix_hal = 'ciseaux';
+  else
+    $choix_hal == 'pierre'; //Tour 2
+} elseif ($position == 2) {
+  $choix_hal = $_SESSION['hal'][$_SESSION['tour'] - 2]; //Tour 3
+} elseif ($position == 3) {
+  if ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'pierre')
+    $choix_hal = 'feuille' or 'ciseaux';
+  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'feuille' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'feuille')
+    $choix_hal = 'pierre' or 'ciseaux';
+  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'ciseaux' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'ciseaux')
+    $choix_hal = 'pierre' or 'feuille';
+  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'feuille')
+    $choix_hal = 'ciseaux';
+  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'ciseaux')
+    $choix_hal = 'feuille';
+  else
+    $choix_hal = 'pierre'; //Tour 4 //TODO: Créer un tableau ou l'on mets toutes les possibilités puis retirer celles qui sont déja sortis
+} elseif ($position == 4) {
+  $choix_hal = $_SESSION['joueur'][$_SESSION['tour'] - 1]; //Tour 5
+} else {
+  $choix_hal = "ERREUR";
+}
+// creer un tab [feuille => pierre]
+// $tab[$player] == $choix_hal
+
+if ($player) { //Incrémenter les sessions après avoir fait un choix
+  $_SESSION['joueur'][] = $player;
+  $_SESSION['tour']++;
+  $_SESSION['hal'][] = $choix_hal;
+}
+
+
+// var_dump($_SESSION);
+// var_dump($choix_hal);
+
+
+// echo "On est au tour " . $_SESSION['tour'] . "<br>";
+
+if ($player == 'pierre' and $choix_hal == 'ciseaux' or $player == 'feuille' and $choix_hal == 'pierre' or $player == 'ciseaux' and $choix_hal == 'feuille')
+  $_SESSION['nombre_de_victoire'] = $_SESSION['nombre_de_victoire'] + 1;
+if ($player == 'pierre' and $choix_hal == 'feuille' or $player == 'feuille' and $choix_hal == 'ciseaux' or $player == 'ciseaux' and $choix_hal == 'pierre')
+  $_SESSION['nombre_de_defaite'] = $_SESSION['nombre_de_defaite'] + 1;
+
+if (isset($_POST['reset_des_tentatives']))
+  $_SESSION['tour'] = 0;
+
+if (isset($_POST['reset_des_victoires']))
+  $_SESSION['nombre_de_victoire'] = 0;
+
+if (isset($_POST['reset_des_defaites']))
+  $_SESSION['nombre_de_defaite'] = 0;
+
+if (isset($_POST['reset']))
+  $_SESSION['nombre_de_defaite'] = 0;
+if (isset($_POST['reset']))
+  $_SESSION['tour'] = 0;
+if (isset($_POST['reset']))
+  $_SESSION['nombre_de_victoire'] = 0;
+if (isset($_POST['reset']))
+  session_destroy();
+//TODO: Moyen que la plupart des "bouttons" ci-dessus servent a rien
+
+if (($player == 'pierre' and $choix_hal == 'ciseaux') or ($player == 'feuille' and $choix_hal == 'pierre') or ($player == 'ciseaux' and $choix_hal == 'feuille'))
+  $message_de_victoire = "Victoire";
+elseif ($player == $choix_hal)
+  $message_de_victoire = "Egalité";
+else
+  $message_de_victoire = "Perdu";
+
+
+// echo $message_de_victoire . ' <br>' . 'Nombre de tentatives : ' . $_SESSION['tour'] . '<br>' . 'Nombre de victoire : ' . $_SESSION['nombre_de_victoire'] . '<br>' . 'Nombre de défaites : ' . $_SESSION['nombre_de_defaite'];
+
+//CONSEIL !! Déclarer des constantes
+//define (Pierre,"Pierre")
+//PIERRE
 ?>
 
-<body class="h-14 bg-linear-to-r from-cyan-500 to-blue-500">
-  <nav class="bg-white/15">
+<body class="bg-gradient-to-br from-gray-950 via-gray-700 to-gray-400 min-h-screen">
+  <nav class="bg-gray-900 backdrop-blur-sm shadow-xl backdrop-filter bg-opacity-30 sticky top-0 z-50">
     <div class="max-full mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex justify-between w-full">
@@ -34,7 +153,7 @@ include "./header.php"
               <el-menu anchor="bottom end" popover class="w-56 origin-top-right rounded-md bg-gray-800 outline-1 -outline-offset-1 outline-white/10 transition transition-discrete [--anchor-gap:--spacing(2)] data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in">
                 <div class="py-1">
                   <!--Button modale profil-->
-                  <button command="show-modal" commandfor="dialog" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Profile</button>
+                  <button command="show-modal" commandfor="dialog" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Profil</button>
                   <!--Button modale connection-->
                   <button command="show-modal" commandfor="login" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Se connecter</button>
                 </div>
@@ -45,44 +164,51 @@ include "./header.php"
       </div>
     </div>
   </nav>
-  <div class="flex items-center justify-center p-6 mt-10">
-    <div class="max-w-4xl w-full">
-      <div class="rounded-xl p-8 bg-white/90 backdrop-blur-sm shadow-2xl">
-        <div class="text-center">
-          <p class="text-4xl text-gray-900 mb-4">Shifumi</p>
-        </div>
-        <div class="flex justify-around mb-8 bg-gray-100/100 rounded-xl p-4">
-          <div class="text-center" id="player">
-            <p class="text-sm text-black mb-3">vous</p>
-            <p class="text-3x1 font-bold text-blue-700">0</p>
+  <form method="POST" action="#">
+    <div class="flex items-center justify-center p-6 mt-10">
+      <div class="max-w-4xl w-full">
+        <div class="rounded-xl p-8 bg-white/90 backdrop-blur-sm shadow-2xl">
+          <div class="text-center">
+            <p class="text-4xl text-gray-900 mb-4">Shifumi</p>
           </div>
-          <div class="text-center" id="robot">
-            <p class="text-sm text-black mb-3">robot</p>
-            <p class="text-sm font-bold text-red-600">0</p>
+          <div class="flex justify-around mb-8 bg-gray-100/100 rounded-xl p-4">
+            <div class="text-center" id="player">
+              <p class="text-sm text-black mb-3">vous</p>
+              <p class="text-3x1 font-bold text-blue-700">
+                <?= $_SESSION['nombre_de_victoire'] ?>
+              </p>
+            </div>
+            <div class="text-center" id="robot">
+              <p class="text-sm text-black mb-3">robot</p>
+              <p class="text-sm font-bold text-red-600">
+                <?= $_SESSION['nombre_de_defaite'] ?>
+              </p>
+            </div>
           </div>
-        </div>
-        <div class="grid grid-cols-3 gap-4 mb-6">
-          <button command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-stone-400 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
-            <span class="text-6xl block mb-2">🪨</span>
-            <span class="text-xl font-semibold">Pierre</span>
-          </button>
+          <div class="grid grid-cols-3 gap-4 mb-6">
+            <!-- <button type="submit" class="btn btn-primary" id="pierre" name="choix" value="pierre">Pierre</button> -->
+            <button type="submit" name="choix" value="pierre" command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-stone-400 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
+              <span class="text-6xl block mb-2">🪨</span>
+              <span class="text-xl font-semibold">Pierre</span>
+            </button>
 
-          <button command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-green-400 to-green-700 hover:from-green-600 hover:to--900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
-            <span class="text-6xl block mb-2">🍃​</span>
-            <span class="text-xl font-semibold">Feuille</span>
-          </button>
+            <button type="submit" name="choix" value="feuille" command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-green-400 to-green-700 hover:from-green-600 hover:to--900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
+              <span class="text-6xl block mb-2">🍃​</span>
+              <span class="text-xl font-semibold">Feuille</span>
+            </button>
 
-          <button command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
-            <span class="text-6xl block mb-2">​✂️​</span>
-            <span class="text-xl font-semibold">Ciseaux</span>
-          </button>
-        </div>
-        <div class="flex gab-3">
-          <button class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 hover:cursor-pointer px-6 rounded-xl transition-colors transform hover:scale-105">reset</button>
+            <button type="submit" name="choix" value="ciseaux" command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
+              <span class="text-6xl block mb-2">​✂️​</span>
+              <span class="text-xl font-semibold">Ciseaux</span>
+            </button>
+          </div>
+          <div class="flex gab-3">
+            <button type="submit" name="reset" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 hover:cursor-pointer px-6 rounded-xl transition-colors transform hover:scale-105">reset</button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </form>
 </body>
 <!--modal leaderboard-->
 <el-dialog>
@@ -268,5 +394,19 @@ include "./header.php"
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+
+<?php
+// Rustine faite par Erwann. Si le joueur a voté, un attends une seconde puis on ouvre la modal
+if (!empty($player)) {
+  echo "<script>
+    window.addEventListener('DOMContentLoaded', async function() {
+      let modal = document.querySelector('#resultat-manche'); 
+      await sleep(1000); 
+      modal.open=true;
+    });
+    
+  </script>";
+}
+?>
 
 </html>
