@@ -1,26 +1,29 @@
-<!DOCTYPE html>
-<html lang="fr"></html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index</title>
-  <style>
-    #menu-toggle:checked ~ #menu {
-      display: block;
-    }
-  </style>
-  </head>
-<body class="bg-gradient-to-br from-gray-950 via-gray-700 to-gray-400 min-h-screen"> 
-  <nav class="bg-gray-900 bg-opacity-90 backdrop-blur-sm shadow-xl sticky top-0 z-50">
+<?php
+include "./header.php"
+?>
+
+<body class="bg-gradient-to-br from-gray-950 via-gray-700 to-gray-400 min-h-screen">
+  <nav class="bg-gray-900 backdrop-blur-sm shadow-xl backdrop-filter bg-opacity-30 sticky top-0 z-50">
     <div class="max-full mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <div class="flex justify-between w-full">
           <span></span>
           <div class="flex items-baseline space-x-4">
             <!--Button modale rules-->
-            <button command="show-modal" commandfor="rules"class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Régle</button>
+            <button command="show-modal" commandfor="rules" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Régle</button>
             <!--Button modale Leaderboard-->
             <button command="show-modal" commandfor="leaderboard" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Classement</button>
+            <!---->
+            <div>
+              <el-dropdown class="relative">
+                <button class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Mode</button>
+                <el-menu anchor="bottom end" popover class="w-56 origin-top-right rounded-md bg-gray-800 outline-1 -outline-offset-1 outline-white/10 transition transition-discrete [--anchor-gap:--spacing(2)] data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in">
+                  <button class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Classique</button>
+                  <button
+                    class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Spécial</button>
+                </el-menu>
+              </el-dropdown>
+            </div>
           </div>
           <div>
             <el-dropdown class="relative">
@@ -59,53 +62,29 @@
           </div>
         </div>
         <div class="grid grid-cols-3 gap-4 mb-6">
-          <button class="bg-gradient-to-br from-stone-400 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
+          <button command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-stone-400 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
             <span class="text-6xl block mb-2">🪨</span>
             <span class="text-xl font-semibold">Pierre</span>
           </button>
 
-          <button class="bg-gradient-to-br from-green-400 to-green-700 hover:from-green-600 hover:to--900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
+          <button command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-green-400 to-green-700 hover:from-green-600 hover:to--900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
             <span class="text-6xl block mb-2">🍃​</span>
             <span class="text-xl font-semibold">Feuille</span>
           </button>
 
-          <button class="bg-gradient-to-br from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
+          <button command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
             <span class="text-6xl block mb-2">​✂️​</span>
             <span class="text-xl font-semibold">Ciseaux</span>
           </button>
         </div>
         <div class="flex gab-3">
-          <button class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-xl transition-colors transform hover:scale-105">reset</button>
+          <button class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 hover:cursor-pointer px-6 rounded-xl transition-colors transform hover:scale-105">reset</button>
         </div>
       </div>
     </div>
   </div>
-  <!--modal Rule-->
-  <el-dialog>
-    <dialog id="rules" aria-labelledby="dialog-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
-    <el-dialog-backdrop class="fixed inset-0 bg-gray-900/50 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
-      <div tabindex="0" class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
-        <el-dialog-panel class="relative transform overflow-hidden rounded-lg bg-gray-800 text-left shadow-xl outline -outline-offset-1 outline-white/10 transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg data-closed:sm:translate-y-0 data-closed:sm:scale-95">
-         <div class="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                <h3 id="dialog-title" class="text-base font-semibold text-white">Régle</h3>
-                <div class="mt-4">
-                      <div class="flex-grow border-t border-gray-400 mb-4"></div>
-                  <p class="text-sm text-gray-400">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Praesentium recusandae, commodi ducimus, saepe quasi fugiat voluptas reiciendis neque, porro repellendus quas quidem! Tenetur quis dolore eaque commodi esse vitae blanditiis.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-gray-700/25 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            <button type="button" command="close" commandfor="rules" class="inline-flex w-full justify-center rounded-md bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-400 sm:ml-3 sm:w-auto hover:cursor-pointer">Ok</button>
-          </div>
-        </el-dialog-panel>
-      </div>
-    </dialog>
-  </el-dialog>
-  <!--end modal rule-->
-  <!--modal leaderboard-->
+</body>
+<!--modal leaderboard-->
 <el-dialog>
   <dialog id="leaderboard" aria-labelledby="dialog-title"
     class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
@@ -165,7 +144,6 @@
             </table>
           </div>
         </div>
-
         <div class="bg-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
           <button type="button" command="close" commandfor="leaderboard"
             class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 sm:ml-3 sm:w-auto hover:cursor-pointer">
@@ -176,8 +154,8 @@
     </div>
   </dialog>
 </el-dialog>
-  <!--end modal leaderboard-->
-  <!--modal connection-->
+<!--end modal leaderboard-->
+<!--modal connection-->
 <el-dialog>
   <dialog id="login" aria-labelledby="dialog-title"
     class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
@@ -223,9 +201,75 @@
     </div>
   </dialog>
 </el-dialog>
-  <!--end modal connection-->
-  
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-</body>
+<!--end modal connection-->
+<!--modal Rule-->
+<el-dialog>
+  <dialog id="rules" aria-labelledby="dialog-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
+    <el-dialog-backdrop class="fixed inset-0 bg-gray-900/50 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
+    <div tabindex="0" class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
+      <el-dialog-panel class="relative transform overflow-hidden rounded-lg bg-gray-800 text-left shadow-xl outline -outline-offset-1 outline-white/10 transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg data-closed:sm:translate-y-0 data-closed:sm:scale-95">
+        <div class="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+              <h3 id="dialog-title" class="text-base font-semibold text-white">Régle</h3>
+              <div class="mt-4">
+                <div class="flex-grow border-t border-gray-400 mb-4"></div>
+                <p class="text-sm text-gray-400">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Praesentium recusandae, commodi ducimus, saepe quasi fugiat voluptas reiciendis neque, porro repellendus quas quidem! Tenetur quis dolore eaque commodi esse vitae blanditiis.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-700/25 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+          <button type="button" command="close" commandfor="rules" class="inline-flex w-full justify-center rounded-md bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-400 sm:ml-3 sm:w-auto hover:cursor-pointer">Ok</button>
+        </div>
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>
+<!--end modal rule-->
+<!--modal screen result-->
+<el-dialog>
+  <dialog id="resultat-manche" aria-labelledby="resultat-title"
+    class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
+    <el-dialog-backdrop
+      class="fixed inset-0 bg-black/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
+    <div tabindex="0"
+      class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
+      <el-dialog-panel
+        class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg data-closed:sm:translate-y-0 data-closed:sm:scale-95">
+        <div class="bg-gray-900 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+          <div class="text-center">
+            <h3 id="resultat-title" class="text-4xl font-extrabold text-green-400 mb-6" data-result-type="victoire">
+              VICTOIRE !
+            </h3>
+            <div class="flex justify-around items-center space-x-8 mb-8">
+              <div class="text-center">
+                <p class="text-lg font-semibold text-gray-300 mb-2">Vous</p>
+                <span id="player-move-display" class="text-8xl block">🪨</span>
+                <p class="text-xl font-bold text-white mt-2">Pierre</p>
+              </div>
+              <span class="text-4xl font-extrabold text-gray-500">VS</span>
+              <div class="text-center">
+                <p class="text-lg font-semibold text-gray-300 mb-2">Robot</p>
+                <span id="robot-move-display" class="text-8xl block">🍃</span>
+                <p class="text-xl font-bold text-white mt-2">Feuille</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
+          <button type="button" command="close" commandfor="resultat-manche"
+            class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 sm:w-auto hover:cursor-pointer">
+            Continuer
+          </button>
+        </div>
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>
+<!--end modal screen result-->
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+
 </html>
