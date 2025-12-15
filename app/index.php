@@ -45,16 +45,16 @@ if ($position == 0) {
   elseif ($_SESSION['joueur'][$_SESSION['tour'] - 1] == 'feuille')
     $choix_hal = 'ciseaux';
   else
-    $choix_hal == 'pierre'; //Tour 2
+    $choix_hal = 'pierre'; //Tour 2
 } elseif ($position == 2) {
   $choix_hal = $_SESSION['hal'][$_SESSION['tour'] - 2]; //Tour 3
 } elseif ($position == 3) {
   if ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'pierre')
-    $choix_hal = 'feuille' or 'ciseaux';
+    $choix_hal = ['feuille', 'ciseaux'][array_rand(['feuille', 'ciseaux'])];
   elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'feuille' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'feuille')
-    $choix_hal = 'pierre' or 'ciseaux';
+    $choix_hal = ['pierre', 'ciseaux'][array_rand(['pierre', 'ciseaux'])];
   elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'ciseaux' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'ciseaux')
-    $choix_hal = 'pierre' or 'feuille';
+    $choix_hal = ['pierre', 'feuille'][array_rand(['pierre', 'feuille'])];
   elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'feuille')
     $choix_hal = 'ciseaux';
   elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'ciseaux')
@@ -362,7 +362,7 @@ else
         <div class="bg-gray-900 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
           <div class="text-center">
             <h3 id="resultat-title" class="text-4xl font-extrabold text-green-400 mb-6" data-result-type="victoire">
-              <?= $message_de_victoire ?>
+              <?= $message_de_victoire ?> <!-- TODO: Changer la couleur du message en fonction du résultat, green pour victoire, orange pour égalité et red pour défaite. Il faut juste changer le text-green-400 au dessus -->
             </h3>
             <div class="flex justify-around items-center space-x-8 mb-8">
               <div class="text-center">
