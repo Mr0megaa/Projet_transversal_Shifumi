@@ -4,122 +4,155 @@
   }
 </script>
 <?php
+
+//TODO : MISE EN PLACE DU LOGIN ET DE LA CREATION DU COMPTE
+//TODO : MISE EN PLACE DE LA PAGE COMPTE
+//TODO : REMPLACER LE LEADERBOARD PAR UN HISTORIQUE DES MANCHES
+//TODO : AJOUTER HEURE DE COMMENCEMENT DE LA PREMIER PARTIE
 session_start();
+
+
+if (!isset($_SESSION['mode'])) {
+  $_SESSION['mode'] = null;
+}
+
+if (isset($_POST['select_mode'])) {
+  $_SESSION['mode'] = $_POST['select_mode'];
+}
+
+
+define('PIERRE',  'pierre');
+define('FEUILLE', 'feuille');
+define('CISEAUX', 'ciseaux');
+define('LEZARD',  'lezard');
+define('SPOCK',   'spock');
+
+
 include "./header.php";
+include "./config.php";
 
-//unset($_SESSION['']); // SI JE VEUX CLEAN UNE SESSION QUI N'EST PAS SENSE ETRE LA
 
-if (!isset($_SESSION['tour'])) {
-  $_SESSION['tour'] = 0;
+if (!isset($_SESSION['tour'])) $_SESSION['tour'] = 0;
+if (!isset($_SESSION['hal'])) $_SESSION['hal'] = [];
+if (!isset($_SESSION['joueur'])) $_SESSION['joueur'] = [];
+if (!isset($_SESSION['nombre_de_victoire'])) $_SESSION['nombre_de_victoire'] = 0;
+if (!isset($_SESSION['nombre_de_defaite'])) $_SESSION['nombre_de_defaite'] = 0;
+
+
+$regles = [
+  PIERRE  => [CISEAUX, LEZARD],
+  FEUILLE => [PIERRE, SPOCK],
+  CISEAUX => [FEUILLE, LEZARD],
+  LEZARD  => [SPOCK, FEUILLE],
+  SPOCK   => [CISEAUX, PIERRE],
+];
+
+
+$contre_map = [
+  PIERRE  => [FEUILLE, SPOCK],
+  FEUILLE => [CISEAUX, LEZARD],
+  CISEAUX => [PIERRE, SPOCK],
+  SPOCK   => [FEUILLE, LEZARD],
+  LEZARD  => [PIERRE, CISEAUX]
+];
+
+$choix_possibles = [PIERRE, FEUILLE, CISEAUX];
+if ($_SESSION['mode'] === 'special') {
+  $choix_possibles = [PIERRE, FEUILLE, CISEAUX, LEZARD, SPOCK];
 }
-if (!isset($_SESSION['hal'])) {
-  $_SESSION['hal'] = NULL;
-}
-if (!isset($_SESSION['joueur'])) {
-  $_SESSION['joueur'] = NULL;
-}
-if (!isset($_SESSION['nombre_de_victoire'])) {
-  $_SESSION['nombre_de_victoire'] = 0;
-}
-if (!isset($_SESSION['nombre_de_defaite'])) {
-  $_SESSION['nombre_de_defaite'] = 0;
-}
+
 
 $player = $_POST['choix'] ?? NULL;
-$choix_hal = NULL;
 
-$choix = array(
-  'pierre',
-  'feuille',
-  'ciseaux',
-);
+if ($player) {
+  $position = $_SESSION['tour'] % 5;
+  $choix_hal = NULL;
 
-$rand = array_rand($choix); //Creation d'un tableau puis array_rand tableau pour le random
+  if ($position == 0) {
+    $choix_hal = $choix_possibles[array_rand($choix_possibles)];
+  } elseif ($position == 1) {
+    $dernier_coup_joueur = end($_SESSION['joueur']);
+    $possibilites = $contre_map[$dernier_coup_joueur] ?? [PIERRE];
+    $choix_hal = $possibilites[array_rand($possibilites)];
+  } elseif ($position == 2) {
+    $index_tour_2 = $_SESSION['tour'] - 2;
+    $choix_hal = $_SESSION['hal'][$index_tour_2] ?? $choix_possibles[array_rand($choix_possibles)];
+  } elseif ($position == 3) {
+    $compte = array_count_values($_SESSION['hal']);
+    foreach ($choix_possibles as $nom) {
+      if (!isset($compte[$nom])) $compte[$nom] = 0;
+    }
+    asort($compte);
+    $choix_hal = array_key_first($compte);
+  } else {
+    $tour_precedent = $_SESSION['tour'] - 1;
+    $choix_hal = $_SESSION['joueur'][$tour_precedent] ?? PIERRE;
+  }
 
-$position = ($_SESSION['tour']) % 5;
-if ($position == 0) {
-  $choix_hal = $choix[$rand]; //Tour 1 
-} elseif ($position == 1) {
-  if ($_SESSION['joueur'][$_SESSION['tour'] - 1] == 'pierre')
-    $choix_hal = 'feuille';
-  elseif ($_SESSION['joueur'][$_SESSION['tour'] - 1] == 'feuille')
-    $choix_hal = 'ciseaux';
-  else
-    $choix_hal == 'pierre'; //Tour 2
-} elseif ($position == 2) {
-  $choix_hal = $_SESSION['hal'][$_SESSION['tour'] - 2]; //Tour 3
-} elseif ($position == 3) {
-  if ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'pierre')
-    $choix_hal = 'feuille' or 'ciseaux';
-  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'feuille' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'feuille')
-    $choix_hal = 'pierre' or 'ciseaux';
-  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'ciseaux' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'ciseaux')
-    $choix_hal = 'pierre' or 'feuille';
-  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'feuille')
-    $choix_hal = 'ciseaux';
-  elseif ($_SESSION['hal'][$_SESSION['tour'] - 1] == 'pierre' and $_SESSION['hal'][$_SESSION['tour'] - 2] == 'ciseaux')
-    $choix_hal = 'feuille';
-  else
-    $choix_hal = 'pierre'; //Tour 4 //TODO: Créer un tableau ou l'on mets toutes les possibilités puis retirer celles qui sont déja sortis
-} elseif ($position == 4) {
-  $choix_hal = $_SESSION['joueur'][$_SESSION['tour'] - 1]; //Tour 5
-} else {
-  $choix_hal = "ERREUR";
-}
-// creer un tab [feuille => pierre]
-// $tab[$player] == $choix_hal
-
-if ($player) { //Incrémenter les sessions après avoir fait un choix
   $_SESSION['joueur'][] = $player;
-  $_SESSION['tour']++;
   $_SESSION['hal'][] = $choix_hal;
+  $_SESSION['tour']++;
+
+  if ($player == $choix_hal) {
+    $_SESSION['dernier_message'] = "Égalité";
+  } elseif (in_array($choix_hal, $regles[$player])) {
+    $_SESSION['dernier_message'] = "Victoire";
+    $_SESSION['nombre_de_victoire']++;
+  } else {
+    $_SESSION['dernier_message'] = "Perdu";
+    $_SESSION['nombre_de_defaite']++;
+  }
+
+  $_SESSION['dernier_message'] = $message;
+  $_SESSION['dernier_coup_joueur'] = $player;
+  $_SESSION['dernier_coup_robot'] = $choix_hal;
+
+  header("Location: " . $_SERVER['PHP_SELF']);
+  exit;
 }
 
 
-// var_dump($_SESSION);
-// var_dump($choix_hal);
-
-
-// echo "On est au tour " . $_SESSION['tour'] . "<br>";
-
-if ($player == 'pierre' and $choix_hal == 'ciseaux' or $player == 'feuille' and $choix_hal == 'pierre' or $player == 'ciseaux' and $choix_hal == 'feuille')
-  $_SESSION['nombre_de_victoire'] = $_SESSION['nombre_de_victoire'] + 1;
-if ($player == 'pierre' and $choix_hal == 'feuille' or $player == 'feuille' and $choix_hal == 'ciseaux' or $player == 'ciseaux' and $choix_hal == 'pierre')
-  $_SESSION['nombre_de_defaite'] = $_SESSION['nombre_de_defaite'] + 1;
-
-if (isset($_POST['reset_des_tentatives']))
-  $_SESSION['tour'] = 0;
-
-if (isset($_POST['reset_des_victoires']))
-  $_SESSION['nombre_de_victoire'] = 0;
-
-if (isset($_POST['reset_des_defaites']))
-  $_SESSION['nombre_de_defaite'] = 0;
-
-if (isset($_POST['reset']))
-  $_SESSION['nombre_de_defaite'] = 0;
-if (isset($_POST['reset']))
-  $_SESSION['tour'] = 0;
-if (isset($_POST['reset']))
-  $_SESSION['nombre_de_victoire'] = 0;
-if (isset($_POST['reset']))
+if (isset($_POST['reset'])) {
+  session_unset();
   session_destroy();
-//TODO: Moyen que la plupart des "bouttons" ci-dessus servent a rien
+  header("Location: " . $_SERVER['PHP_SELF']);
+  exit;
+}
 
-if (($player == 'pierre' and $choix_hal == 'ciseaux') or ($player == 'feuille' and $choix_hal == 'pierre') or ($player == 'ciseaux' and $choix_hal == 'feuille'))
-  $message_de_victoire = "Victoire";
-elseif ($player == $choix_hal)
-  $message_de_victoire = "Egalité";
-else
-  $message_de_victoire = "Perdu";
-
-
-// echo $message_de_victoire . ' <br>' . 'Nombre de tentatives : ' . $_SESSION['tour'] . '<br>' . 'Nombre de victoire : ' . $_SESSION['nombre_de_victoire'] . '<br>' . 'Nombre de défaites : ' . $_SESSION['nombre_de_defaite'];
-
-//CONSEIL !! Déclarer des constantes
-//define (Pierre,"Pierre")
-//PIERRE
+$emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "🦎", SPOCK => "🖖"];
 ?>
+<!--Choix mode-->
+<?php if ($_SESSION['mode'] === null): ?>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-gray-950/90 backdrop-blur-sm"></div>
+
+    <div class="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-gray-900 p-8 text-center shadow-2xl border border-white/10">
+      <div class="mb-8">
+        <h2 class="text-3xl font-extrabold text-white tracking-tight">Configuration</h2>
+        <p class="mt-2 text-gray-400">Veuillez Sélectionnez votre mode de jeu</p>
+      </div>
+
+      <form method="POST" class="space-y-4">
+        <button type="submit" name="select_mode" value="classique"
+          class="group relative w-full flex flex-col items-center justify-center py-4 bg-gray-800 hover:bg-blue-600 rounded-xl transition-all duration-200 border border-white/5 hover:border-blue-400 hover:cursor-pointer">
+          <span class="text-lg font-bold text-white group-hover:scale-110 transition-transform">Mode Classique</span>
+          <span class="text-xs text-gray-400 group-hover:text-blue-100">Un mode tout ce qu'il y a de plus normal</span>
+        </button>
+
+        <button type="submit" name="select_mode" value="special"
+          class="group relative w-full flex flex-col items-center justify-center py-4 bg-gray-800 hover:bg-purple-600 rounded-xl transition-all duration-200 border border-white/5 hover:border-purple-400 hover:cursor-pointer">
+          <span class="text-lg font-bold text-white group-hover:scale-110 transition-transform">Mode Spécial</span>
+          <span class="text-xs text-gray-400 group-hover:text-purple-100">Juste un mode de geek</span>
+        </button>
+      </form>
+
+      <p class="mt-6 text-[10px] uppercase tracking-widest text-gray-500">
+        Le mode sera verrouillé jusqu'au prochain reset
+      </p>
+    </div>
+  </div>
+<?php endif; ?>
+<!--Choix mode-->
 
 <body class="h-14 bg-linear-to-r from-cyan-500 to-blue-500">
   <nav class="bg-white/15">
@@ -134,14 +167,9 @@ else
             <button command="show-modal" commandfor="leaderboard" class="text-gray-600 hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Classement</button>
             <!---->
             <div>
-              <el-dropdown class="relative">
-                <button class="text-gray-600 hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Mode</button>
-                <el-menu anchor="bottom end" popover class="w-35 rounded-md bg-blue-600/40 outline-white/10 transition transition-discrete [--anchor-gap:--spacing(1)] data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in">
-                  <button class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Classique</button>
-                  <button
-                    class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Spécial</button>
-                </el-menu>
-              </el-dropdown>
+              <div class="text-gray-400 px-3 py-2 text-sm font-medium border border-white/10 rounded-md">
+                Mode : <span class="text-white uppercase"><?= $_SESSION['mode'] ?? '...' ?></span>
+              </div>
             </div>
           </div>
           <div>
@@ -200,6 +228,20 @@ else
               <span class="text-6xl block mb-2">​✂️​</span>
               <span class="text-xl font-semibold">Ciseaux</span>
             </button>
+
+            <div id="special-container" class="col-span-3 flex justify-center gap-4 <?= $_SESSION['mode'] === 'special' ? '' : 'hidden' ?>">
+
+              <button type="submit" name="choix" value="lezard" class="special-option hover:cursor-pointer bg-gradient-to-br from-purple-400 to-purple-700 hover:from-purple-600 hover:to-purple-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg w-1/3">
+                <span class="text-6xl block mb-2">🦎</span>
+                <span class="text-xl font-semibold">Lézard</span>
+              </button>
+
+              <button type="submit" name="choix" value="spock" class="special-option hover:cursor-pointer bg-gradient-to-br from-yellow-400 to-yellow-600 hover:from-yellow-600 hover:to-yellow-800 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg w-1/3">
+                <span class="text-6xl block mb-2">🖖</span>
+                <span class="text-xl font-semibold">Spock</span>
+              </button>
+
+            </div>
           </div>
           <div class="flex gab-3">
             <button type="submit" name="reset" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 hover:cursor-pointer px-6 rounded-xl transition-colors transform hover:scale-105">reset</button>
@@ -296,14 +338,14 @@ else
                 <form action="#" class="space-y-6">
                   <div>
                     <label for="Identifiant" class="block mb-2 text-sm font-medium text-gray-300">Identifiant</label>
-                    <input type="text" id="Identifiant"
+                    <input type="text" id="Identifiant" name="username"
                       class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-400"
                       placeholder="Zengorax" required />
                   </div>
                   <div>
                     <label for="password" class="block mb-2 text-sm font-medium text-gray-300">Mot de
                       passe</label>
-                    <input type="password" id="password"
+                    <input type="password" id="password" name="password"
                       class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-400"
                       placeholder="•••••••••" required />
                   </div>
@@ -314,7 +356,7 @@ else
           </div>
         </div>
         <div class="bg-gray-700 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
-          <button type="button" command="close" commandfor="login"
+          <button type="submite" name="login_submit"
             class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-700 sm:ml-3 sm:w-auto hover:cursor-pointer">
             Se connecter
           </button>
@@ -351,57 +393,41 @@ else
 <!--end modal rule-->
 <!--modal screen result-->
 <el-dialog>
-  <dialog id="resultat-manche" aria-labelledby="resultat-title"
-    class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
-    <el-dialog-backdrop
-      class="fixed inset-0 bg-black/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
-    <div tabindex="0"
-      class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
-      <el-dialog-panel
-        class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg data-closed:sm:translate-y-0 data-closed:sm:scale-95">
+  <dialog id="resultat-manche" aria-labelledby="resultat-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
+    <el-dialog-backdrop class="fixed inset-0 bg-black/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
+    <div tabindex="0" class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
+      <el-dialog-panel class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg">
         <div class="bg-gray-900 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
           <div class="text-center">
-            <h3 id="resultat-title" class="text-4xl font-extrabold text-green-400 mb-6" data-result-type="victoire">
-              <?= $message_de_victoire ?>
+            <?php
+            $res = $_SESSION['dernier_message'] ?? '';
+            $p_move = $_SESSION['dernier_coup_joueur'] ?? '';
+            $r_move = $_SESSION['dernier_coup_robot'] ?? '';
+            ?>
+            <h3 id="resultat-title" class="text-4xl font-extrabold mb-6 
+              <?= ($res == 'Victoire' ? 'text-green-400' : ($res == 'Perdu' ? 'text-red-500' : 'text-yellow-400')); ?>">
+              <?= $res ?>
             </h3>
+
             <div class="flex justify-around items-center space-x-8 mb-8">
               <div class="text-center">
                 <p class="text-lg font-semibold text-gray-300 mb-2">Vous</p>
-                <span id="player-move-display" class="text-8xl block">
-                  <?php if ($player == 'pierre')
-                    echo "🪨";
-                  elseif ($player == 'feuille')
-                    echo "🍃​";
-                  else
-                    echo "​✂️​"
-                  ?>
-                </span>
-                <p class="text-xl font-bold text-white mt-2">
-                  <?= $player ?>
-                </p>
+                <span class="text-8xl block"><?= $emojis[$p_move] ?? '?' ?></span>
+                <p class="text-xl font-bold text-white mt-2"><?= ucfirst($p_move) ?></p>
               </div>
+
               <span class="text-4xl font-extrabold text-gray-500">VS</span>
+
               <div class="text-center">
                 <p class="text-lg font-semibold text-gray-300 mb-2">Robot</p>
-                <span id="robot-move-display" class="text-8xl block">
-                  <?php if ($choix_hal == 'pierre')
-                    echo "🪨";
-                  elseif ($choix_hal == 'feuille')
-                    echo "🍃​";
-                  else
-                    echo "​✂️​"
-                  ?>
-                </span>
-                <p class="text-xl font-bold text-white mt-2">
-                  <?= $choix_hal ?>
-                </p>
+                <span class="text-8xl block"><?= $emojis[$r_move] ?? '?' ?></span>
+                <p class="text-xl font-bold text-white mt-2"><?= ucfirst($r_move) ?></p>
               </div>
             </div>
           </div>
         </div>
         <div class="bg-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
-          <button type="button" command="close" commandfor="resultat-manche"
-            class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 sm:w-auto hover:cursor-pointer">
+          <button type="button" command="close" commandfor="resultat-manche" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 sm:w-auto hover:cursor-pointer">
             Continuer
           </button>
         </div>
@@ -413,18 +439,36 @@ else
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
+<script>
+  const specialContainer = document.getElementById('special-container');
+  const btnSpecial = document.getElementById('btn-special');
+  const btnClassique = document.getElementById('btn-classique');
 
+  btnSpecial.addEventListener('click', (e) => {
+    e.preventDefault();
+    specialContainer.classList.remove('hidden');
+    specialContainer.classList.add('flex');
+    console.log("Mode Spécial Activé");
+  });
+
+  btnClassique.addEventListener('click', (e) => {
+    e.preventDefault();
+    specialContainer.classList.add('hidden');
+    specialContainer.classList.remove('flex');
+    console.log("Mode Classique Activé");
+  });
+</script>
 <?php
-// Rustine faite par Erwann. Si le joueur a voté, un attends une seconde puis on ouvre la modal
-if (!empty($player)) {
-  echo "<script>
-    window.addEventListener('DOMContentLoaded', async function() {
-      let modal = document.querySelector('#resultat-manche'); 
-      await sleep(100); 
-      modal.open=true;
-    });
-    
-  </script>";
+if ($_SESSION['tour'] > 0) {
+  if (!isset($_SESSION['last_shown']) || $_SESSION['last_shown'] < $_SESSION['tour']) {
+    echo "<script>
+              window.addEventListener('DOMContentLoaded', () => {
+                  document.querySelector('#resultat-manche').open = true;
+                  " . ($_SESSION['dernier_message'] === 'Victoire' ? "confetti({particleCount: 150, spread: 70, origin: { y: 0.6 }});" : "") . "
+              });
+          </script>";
+    $_SESSION['last_shown'] = $_SESSION['tour'];
+  }
 }
 ?>
 
