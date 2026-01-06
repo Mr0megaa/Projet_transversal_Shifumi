@@ -8,8 +8,8 @@
 //TODO : MISE EN PLACE DU LOGIN ET DE LA CREATION DU COMPTE
 //TODO : MISE EN PLACE DE LA PAGE COMPTE
 //TODO : REMPLACER LE LEADERBOARD PAR UN HISTORIQUE DES MANCHES
-//TODO : AJOUTER HEURE DE COMMENCEMENT DE LA PREMIER PARTIE
 session_start();
+$isLoggedIn = isset($_SESSION['user_id']);
 
 
 if (!isset($_SESSION['mode'])) {
@@ -37,6 +37,9 @@ if (!isset($_SESSION['hal'])) $_SESSION['hal'] = [];
 if (!isset($_SESSION['joueur'])) $_SESSION['joueur'] = [];
 if (!isset($_SESSION['nombre_de_victoire'])) $_SESSION['nombre_de_victoire'] = 0;
 if (!isset($_SESSION['nombre_de_defaite'])) $_SESSION['nombre_de_defaite'] = 0;
+if (!isset($_SESSION['debut_partie'])) {
+  $_SESSION['debut_partie'] = date('H:i');
+}
 
 
 $regles = [
@@ -47,8 +50,12 @@ $regles = [
   SPOCK   => [CISEAUX, PIERRE],
 ];
 
+$choix_possibles = [PIERRE, FEUILLE, CISEAUX];
+if ($_SESSION['mode'] === 'special') {
+  $choix_possibles = [PIERRE, FEUILLE, CISEAUX, LEZARD, SPOCK];
+}
 
-$contre_map = [
+$contre_complet = [
   PIERRE  => [FEUILLE, SPOCK],
   FEUILLE => [CISEAUX, LEZARD],
   CISEAUX => [PIERRE, SPOCK],
@@ -56,56 +63,60 @@ $contre_map = [
   LEZARD  => [PIERRE, CISEAUX]
 ];
 
-$choix_possibles = [PIERRE, FEUILLE, CISEAUX];
-if ($_SESSION['mode'] === 'special') {
-  $choix_possibles = [PIERRE, FEUILLE, CISEAUX, LEZARD, SPOCK];
+$contre = [];
+foreach ($contre_complet as $signe => $reponses) {
+  $contre[$signe] = array_intersect($reponses, $choix_possibles);
 }
+
 
 
 $player = $_POST['choix'] ?? NULL;
 
 if ($player) {
   $position = $_SESSION['tour'] % 5;
-  $choix_hal = NULL;
+  $hal = NULL;
 
   if ($position == 0) {
-    $choix_hal = $choix_possibles[array_rand($choix_possibles)];
+    $hal = $choix_possibles[array_rand($choix_possibles)];
   } elseif ($position == 1) {
     $dernier_coup_joueur = end($_SESSION['joueur']);
-    $possibilites = $contre_map[$dernier_coup_joueur] ?? [PIERRE];
-    $choix_hal = $possibilites[array_rand($possibilites)];
+    $possibilites = $contre[$dernier_coup_joueur] ?? [PIERRE];
+    $hal = $possibilites[array_rand($possibilites)];
   } elseif ($position == 2) {
-    $index_tour_2 = $_SESSION['tour'] - 2;
-    $choix_hal = $_SESSION['hal'][$index_tour_2] ?? $choix_possibles[array_rand($choix_possibles)];
+    $tour2 = $_SESSION['tour'] - 2;
+    $hal = $_SESSION['hal'][$tour2] ?? $choix_possibles[array_rand($choix_possibles)];
   } elseif ($position == 3) {
-    $compte = array_count_values($_SESSION['hal']);
+    $compte = [];
     foreach ($choix_possibles as $nom) {
-      if (!isset($compte[$nom])) $compte[$nom] = 0;
+      $compte[$nom] = 0;
+    }
+    foreach ($_SESSION['hal'] as $coup) {
+      if (isset($compte[$coup])) $compte[$coup]++;
     }
     asort($compte);
-    $choix_hal = array_key_first($compte);
+    $hal = array_key_first($compte);
   } else {
     $tour_precedent = $_SESSION['tour'] - 1;
-    $choix_hal = $_SESSION['joueur'][$tour_precedent] ?? PIERRE;
+    $hal = $_SESSION['joueur'][$tour_precedent] ?? PIERRE;
   }
 
   $_SESSION['joueur'][] = $player;
-  $_SESSION['hal'][] = $choix_hal;
+  $_SESSION['hal'][] = $hal;
   $_SESSION['tour']++;
 
-  if ($player == $choix_hal) {
-    $_SESSION['dernier_message'] = "Égalité";
-  } elseif (in_array($choix_hal, $regles[$player])) {
-    $_SESSION['dernier_message'] = "Victoire";
+  if ($player == $hal) {
+    $message = "Égalité";
+  } elseif (in_array($hal, $regles[$player])) {
+    $message = "Victoire";
     $_SESSION['nombre_de_victoire']++;
   } else {
-    $_SESSION['dernier_message'] = "Perdu";
+    $message = "Perdu";
     $_SESSION['nombre_de_defaite']++;
   }
 
   $_SESSION['dernier_message'] = $message;
   $_SESSION['dernier_coup_joueur'] = $player;
-  $_SESSION['dernier_coup_robot'] = $choix_hal;
+  $_SESSION['dernier_coup_robot'] = $hal;
 
   header("Location: " . $_SERVER['PHP_SELF']);
   exit;
@@ -121,8 +132,40 @@ if (isset($_POST['reset'])) {
 
 $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "🦎", SPOCK => "🖖"];
 ?>
-<!--Choix mode-->
-<?php if ($_SESSION['mode'] === null): ?>
+<!--Si Pas Connecté-->
+<?php if (!$isLoggedIn): ?>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-gray-950/95 backdrop-blur-md"></div>
+    <div class="relative w-full max-w-md rounded-2xl bg-gray-900 p-8 text-center shadow-2xl border border-blue-500/30">
+      <h2 class="text-3xl font-extrabold text-white mb-4">Bienvenue</h2>
+      <p class="text-gray-400 mb-8">Pour commencé un partie veuillez vous connecter</p>
+
+      <button command="show-modal" commandfor="login"
+        class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 hover:cursor-pointer">
+        Se connecter
+      </button>
+    </div>
+  </div>
+
+<?php elseif ($_SESSION['mode'] === null): ?>
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-gray-950/90 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-md rounded-2xl bg-gray-900 p-8 text-center shadow-2xl border border-white/10">
+      <h2 class="text-3xl font-extrabold text-white mb-8">Configuration</h2>
+      <form method="POST" class="space-y-4">
+        <button type="submit" name="select_mode" value="classique" class="group w-full py-4 bg-gray-800 hover:bg-blue-600 rounded-xl border border-white/5 transition-all hover:cursor-pointer">
+          <span class="text-lg font-bold text-white">Mode Classique</span>
+        </button>
+        <button type="submit" name="select_mode" value="special" class="group w-full py-4 bg-gray-800 hover:bg-purple-600 rounded-xl border border-white/5 transition-all hover:cursor-pointer">
+          <span class="text-lg font-bold text-white">Mode Spécial</span>
+        </button>
+      </form>
+    </div>
+  </div>
+<?php endif; ?>
+<!--Choix mode
+<?php // if ($_SESSION['mode'] === null): 
+?>
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-950/90 backdrop-blur-sm"></div>
 
@@ -151,8 +194,9 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
       </p>
     </div>
   </div>
-<?php endif; ?>
-<!--Choix mode-->
+<?php // endif; 
+?>
+Choix mode-->
 
 <body class="h-14 bg-linear-to-r from-cyan-500 to-blue-500">
   <nav class="bg-white/15">
@@ -162,13 +206,18 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
           <span></span>
           <div class="flex items-baseline space-x-4">
             <!--Button modale rules-->
-            <button command="show-modal" commandfor="rules" class="text-gray-600 hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Régle</button>
+            <button command="show-modal" commandfor="rules" class="text-white hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Régle</button>
             <!--Button modale Leaderboard-->
-            <button command="show-modal" commandfor="leaderboard" class="text-gray-600 hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Classement</button>
+            <button command="show-modal" commandfor="leaderboard" class="text-white hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Classement</button>
             <!---->
-            <div>
-              <div class="text-gray-400 px-3 py-2 text-sm font-medium border border-white/10 rounded-md">
-                Mode : <span class="text-white uppercase"><?= $_SESSION['mode'] ?? '...' ?></span>
+            <div class="flex items-center space-x-6">
+              <div class="flex items-center">
+                <div class="text-White px-3 py-2 text-sm font-medium border border-white/10 rounded-l-md bg-white/5 border-r-0">
+                  Mode : <span class="text-white uppercase"><?= $_SESSION['mode'] ?? '...' ?></span>
+                </div>
+                <div class="text-White px-3 py-2 text-sm font-medium border border-white/10 rounded-r-md bg-white/5">
+                  Début : <span class="text-white ml-1"><?= $_SESSION['debut_partie'] ?></span>
+                </div>
               </div>
             </div>
           </div>
@@ -251,6 +300,10 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
     </div>
   </form>
 </body>
+<div class="hidden" aria-hidden="true">
+  <span class="text-green-400 text-red-500 text-yellow-400 text-gray-400"></span>
+  <span class="bg-green-400 bg-red-500 bg-yellow-400"></span>
+</div>
 <!--modal leaderboard-->
 <el-dialog>
   <dialog id="leaderboard" aria-labelledby="dialog-title"
@@ -351,6 +404,14 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
                   </div>
                   <div class="flex items-start"></div>
                 </form>
+                <div class="mt-4 text-center">
+                  <p class="text-sm text-gray-400">
+                    Pas encore de compte ?
+                    <button type="button" command="show-modal" commandfor="register" class="text-blue-400 hover:underline hover:cursor-pointer">
+                      Créer un compte
+                    </button>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -366,6 +427,54 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
   </dialog>
 </el-dialog>
 <!--end modal connection-->
+<!--modal inscription-->
+<el-dialog>
+  <dialog id="register" aria-labelledby="register-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
+    <el-dialog-backdrop class="fixed inset-0 bg-black/90 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
+
+    <div tabindex="0" class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
+      <el-dialog-panel class="relative transform overflow-hidden rounded-xl bg-gray-800 text-left shadow-2xl outline-none transition-all sm:my-8 sm:w-full sm:max-w-md">
+
+        <form action="#" method="POST">
+          <div class="bg-gray-800 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+            <h3 id="register-title" class="text-xl font-bold text-white">Création du compte</h3>
+            <div class="mt-4">
+              <div class="flex-grow border-t border-gray-700 mb-6"></div>
+
+              <div class="space-y-4">
+                <div>
+                  <label for="reg_username" class="block mb-2 text-sm font-medium text-gray-300">Identifiant</label>
+                  <input type="text" id="reg_username" name="username" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-400" placeholder="Zengorax" required />
+                </div>
+
+                <div>
+                  <label for="reg_password" class="block mb-2 text-sm font-medium text-gray-300">Mot de passe</label>
+                  <input type="password" id="reg_password" name="password" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-400" placeholder="•••••••••" required />
+                </div>
+
+                <div>
+                  <label for="conf_password" class="block mb-2 text-sm font-medium text-gray-300">Confirmation du Mot de passe</label>
+                  <input type="password" id="conf_password" name="conf_password" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-400" placeholder="•••••••••" required />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-700/50 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
+            <button type="submit" name="register_submit" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 transition sm:ml-3 sm:w-auto hover:cursor-pointer">
+              Créer le compte
+            </button>
+            <button type="button" command="show-modal" commandfor="login" class="mt-3 inline-flex w-full justify-center rounded-lg px-4 py-2 text-base font-medium text-gray-400 hover:text-white sm:mt-0 sm:w-auto hover:cursor-pointer">
+              Déjà inscrit ?
+            </button>
+          </div>
+        </form>
+
+      </el-dialog-panel>
+    </div>
+  </dialog>
+</el-dialog>
+<!--end modal inscription-->
 <!--modal Rule-->
 <el-dialog>
   <dialog id="rules" aria-labelledby="dialog-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
@@ -393,26 +502,43 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
 <!--end modal rule-->
 <!--modal screen result-->
 <el-dialog>
-  <dialog id="resultat-manche" aria-labelledby="resultat-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
-    <el-dialog-backdrop class="fixed inset-0 bg-black/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
-    <div tabindex="0" class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
-      <el-dialog-panel class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg">
+  <dialog id="resultat-manche" aria-labelledby="resultat-title"
+    class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
+    <el-dialog-backdrop
+      class="fixed inset-0 bg-black/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
+    <div tabindex="0"
+      class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
+      <el-dialog-panel
+        class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all">
         <div class="bg-gray-900 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
           <div class="text-center">
+
             <?php
-            $res = $_SESSION['dernier_message'] ?? '';
-            $p_move = $_SESSION['dernier_coup_joueur'] ?? '';
-            $r_move = $_SESSION['dernier_coup_robot'] ?? '';
+
+            $res = $_SESSION['dernier_message'] ?? 'En attente...';
+            $p_move = $_SESSION['joueur'][array_key_last($_SESSION['joueur'])] ?? '';
+            $r_move = $_SESSION['hal'][array_key_last($_SESSION['hal'])] ?? '';
+
+            $couleurs = [
+              'Victoire' => 'text-green-400',
+              'Perdu' => 'text-red-400',
+              'Égalité' => 'text-yellow-400'
+            ];
+
+            $colorClass = $couleurs[$res] ?? 'text-gray-400';
+
             ?>
-            <h3 id="resultat-title" class="text-4xl font-extrabold mb-6 
-              <?= ($res == 'Victoire' ? 'text-green-400' : ($res == 'Perdu' ? 'text-red-500' : 'text-yellow-400')); ?>">
+
+            <h3 id="resultat-title" class="text-4xl font-extrabold mb-6 <?= $colorClass ?>">
               <?= $res ?>
             </h3>
 
             <div class="flex justify-around items-center space-x-8 mb-8">
               <div class="text-center">
                 <p class="text-lg font-semibold text-gray-300 mb-2">Vous</p>
-                <span class="text-8xl block"><?= $emojis[$p_move] ?? '?' ?></span>
+                <span class="text-8xl block">
+                  <?= isset($emojis[$p_move]) ? $emojis[$p_move] : '❓' ?>
+                </span>
                 <p class="text-xl font-bold text-white mt-2"><?= ucfirst($p_move) ?></p>
               </div>
 
@@ -420,14 +546,17 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
 
               <div class="text-center">
                 <p class="text-lg font-semibold text-gray-300 mb-2">Robot</p>
-                <span class="text-8xl block"><?= $emojis[$r_move] ?? '?' ?></span>
+                <span class="text-8xl block">
+                  <?= isset($emojis[$r_move]) ? $emojis[$r_move] : '❓' ?>
+                </span>
                 <p class="text-xl font-bold text-white mt-2"><?= ucfirst($r_move) ?></p>
               </div>
             </div>
           </div>
         </div>
         <div class="bg-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
-          <button type="button" command="close" commandfor="resultat-manche" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 sm:w-auto hover:cursor-pointer">
+          <button type="button" command="close" commandfor="resultat-manche"
+            class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 hover:cursor-pointer">
             Continuer
           </button>
         </div>
@@ -436,11 +565,7 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
   </dialog>
 </el-dialog>
 <!--end modal screen result-->
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 <script>
-  const specialContainer = document.getElementById('special-container');
   const btnSpecial = document.getElementById('btn-special');
   const btnClassique = document.getElementById('btn-classique');
 
@@ -464,7 +589,6 @@ if ($_SESSION['tour'] > 0) {
     echo "<script>
               window.addEventListener('DOMContentLoaded', () => {
                   document.querySelector('#resultat-manche').open = true;
-                  " . ($_SESSION['dernier_message'] === 'Victoire' ? "confetti({particleCount: 150, spread: 70, origin: { y: 0.6 }});" : "") . "
               });
           </script>";
     $_SESSION['last_shown'] = $_SESSION['tour'];
