@@ -4,13 +4,67 @@
   }
 </script>
 <?php
-
-//TODO : MISE EN PLACE DU LOGIN ET DE LA CREATION DU COMPTE
+//TODO : RESPONSIVE 
 //TODO : MISE EN PLACE DE LA PAGE COMPTE
-//TODO : REMPLACER LE LEADERBOARD PAR UN HISTORIQUE DES MANCHES
-session_start();
-$isLoggedIn = isset($_SESSION['user_id']);
 
+session_start();
+include "./config.php";
+include "./header.php";
+
+if (isset($_POST['login_submit'])) {
+  $user = trim($_POST['username']);
+  $pass = $_POST['password'];
+
+  $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+  $stmt->execute([$user]);
+  $db_user = $stmt->fetch();
+
+  if ($db_user && password_verify($pass, $db_user['password'])) {
+    $_SESSION['user_id'] = $db_user['id'];
+    $_SESSION['username'] = $db_user['username'];
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit;
+  } else {
+    $error = "Identifiants incorrects.";
+  }
+}
+
+if (isset($_POST['register_submit'])) {
+  $user = trim($_POST['username']);
+  $pass = $_POST['password'];
+  $conf_pass = $_POST['conf_password'];
+
+
+  if (empty($user) || empty($pass)) {
+    $error = "Veuillez remplir tous les champs.";
+  } elseif ($pass !== $conf_pass) {
+    $error = "Les mots de passe ne sont pas identiques.";
+  } else {
+
+    $hashed_password = password_hash($pass, PASSWORD_DEFAULT);
+
+    try {
+
+      $stmt = $pdo->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+      $stmt->execute([$user, $hashed_password]);
+
+
+      $_SESSION['user_id'] = $pdo->lastInsertId();
+      $_SESSION['username'] = $user;
+
+      header("Location: " . $_SERVER['PHP_SELF']);
+      exit;
+    } catch (PDOException $e) {
+      if ($e->getCode() == 23000) {
+        $error = "Ce nom d'utilisateur est déjà pris.";
+      } else {
+        $error = "Une erreur est survenue lors de l'inscription.";
+      }
+    }
+  }
+}
+
+$isLoggedIn = isset($_SESSION['user_id']);
 
 if (!isset($_SESSION['mode'])) {
   $_SESSION['mode'] = null;
@@ -20,23 +74,18 @@ if (isset($_POST['select_mode'])) {
   $_SESSION['mode'] = $_POST['select_mode'];
 }
 
-
 define('PIERRE',  'pierre');
 define('FEUILLE', 'feuille');
 define('CISEAUX', 'ciseaux');
 define('LEZARD',  'lezard');
 define('SPOCK',   'spock');
 
-
-include "./header.php";
-include "./config.php";
-
-
 if (!isset($_SESSION['tour'])) $_SESSION['tour'] = 0;
 if (!isset($_SESSION['hal'])) $_SESSION['hal'] = [];
 if (!isset($_SESSION['joueur'])) $_SESSION['joueur'] = [];
 if (!isset($_SESSION['nombre_de_victoire'])) $_SESSION['nombre_de_victoire'] = 0;
 if (!isset($_SESSION['nombre_de_defaite'])) $_SESSION['nombre_de_defaite'] = 0;
+if (!isset($_SESSION['nombre_d_egalite'])) $_SESSION['nombre_d_egalite'] = 0;
 if (!isset($_SESSION['debut_partie'])) {
   $_SESSION['debut_partie'] = date('H:i');
 }
@@ -106,6 +155,7 @@ if ($player) {
 
   if ($player == $hal) {
     $message = "Égalité";
+    $_SESSION['nombre_d_egalite']++;
   } elseif (in_array($hal, $regles[$player])) {
     $message = "Victoire";
     $_SESSION['nombre_de_victoire']++;
@@ -117,6 +167,7 @@ if ($player) {
   $_SESSION['dernier_message'] = $message;
   $_SESSION['dernier_coup_joueur'] = $player;
   $_SESSION['dernier_coup_robot'] = $hal;
+  $_SESSION['taux_actuel'] = $taux_reussite;
 
   header("Location: " . $_SERVER['PHP_SELF']);
   exit;
@@ -124,6 +175,56 @@ if ($player) {
 
 
 if (isset($_POST['reset'])) {
+  $ip_adresse = $_SERVER['REMOTE_ADDR'];
+  $tour_totals = $_SESSION['nombre_de_victoire'] + $_SESSION['nombre_de_defaite'] + $_SESSION['nombre_d_egalite'];
+
+  $taux_reussite = 0;
+  if ($tour_totals > 0) {
+    $taux_reussite = round(($_SESSION['nombre_de_victoire'] / $tour_totals) * 100, 2);
+  }
+
+  try {
+    $sql = "INSERT INTO stats_visiteurs (ip_address, victoires, defaites, egalites, tours_joues, taux_reussite) 
+                VALUES (:ip, :vic, :def, :ega, :tours, :taux)
+                ON DUPLICATE KEY UPDATE 
+                victoires = victoires + :vic, 
+                defaites = defaites + :def, 
+                egalites = egalites + :ega,
+                tours_joues = tours_joues + :tours, 
+                taux_reussite = ((victoires + :vic) / (tours_joues + :tours)) * 100";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+      ':ip'    => $ip_adresse,
+      ':vic'   => $_SESSION['nombre_de_victoire'],
+      ':def'   => $_SESSION['nombre_de_defaite'],
+      ':ega'   => $_SESSION['nombre_d_egalite'],
+      ':tours' => $tour_totals,
+      ':taux'  => $taux_reussite
+    ]);
+  } catch (PDOException $e) {
+    error_log("Erreur SQL lors du Reset : " . $e->getMessage());
+  }
+
+  unset(
+    $_SESSION['mode'],
+    $_SESSION['tour'],
+    $_SESSION['taux_actuel'],
+    $_SESSION['hal'],
+    $_SESSION['joueur'],
+    $_SESSION['nombre_d_egalite'],
+    $_SESSION['nombre_de_victoire'],
+    $_SESSION['nombre_de_defaite'],
+    $_SESSION['debut_partie'],
+    $_SESSION['last_shown']
+  );
+
+  header("Location: " . $_SERVER['PHP_SELF']);
+  exit;
+}
+
+
+if (isset($_POST['logout'])) {
   session_unset();
   session_destroy();
   header("Location: " . $_SERVER['PHP_SELF']);
@@ -132,22 +233,8 @@ if (isset($_POST['reset'])) {
 
 $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "🦎", SPOCK => "🖖"];
 ?>
-<!--Si Pas Connecté-->
-<?php if (!$isLoggedIn): ?>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-950/95 backdrop-blur-md"></div>
-    <div class="relative w-full max-w-md rounded-2xl bg-gray-900 p-8 text-center shadow-2xl border border-blue-500/30">
-      <h2 class="text-3xl font-extrabold text-white mb-4">Bienvenue</h2>
-      <p class="text-gray-400 mb-8">Pour commencé un partie veuillez vous connecter</p>
 
-      <button command="show-modal" commandfor="login"
-        class="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 hover:cursor-pointer">
-        Se connecter
-      </button>
-    </div>
-  </div>
-
-<?php elseif ($_SESSION['mode'] === null): ?>
+<?php if ($_SESSION['mode'] === null): ?>
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-950/90 backdrop-blur-sm"></div>
     <div class="relative w-full max-w-md rounded-2xl bg-gray-900 p-8 text-center shadow-2xl border border-white/10">
@@ -163,40 +250,6 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
     </div>
   </div>
 <?php endif; ?>
-<!--Choix mode
-<?php // if ($_SESSION['mode'] === null): 
-?>
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-950/90 backdrop-blur-sm"></div>
-
-    <div class="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-gray-900 p-8 text-center shadow-2xl border border-white/10">
-      <div class="mb-8">
-        <h2 class="text-3xl font-extrabold text-white tracking-tight">Configuration</h2>
-        <p class="mt-2 text-gray-400">Veuillez Sélectionnez votre mode de jeu</p>
-      </div>
-
-      <form method="POST" class="space-y-4">
-        <button type="submit" name="select_mode" value="classique"
-          class="group relative w-full flex flex-col items-center justify-center py-4 bg-gray-800 hover:bg-blue-600 rounded-xl transition-all duration-200 border border-white/5 hover:border-blue-400 hover:cursor-pointer">
-          <span class="text-lg font-bold text-white group-hover:scale-110 transition-transform">Mode Classique</span>
-          <span class="text-xs text-gray-400 group-hover:text-blue-100">Un mode tout ce qu'il y a de plus normal</span>
-        </button>
-
-        <button type="submit" name="select_mode" value="special"
-          class="group relative w-full flex flex-col items-center justify-center py-4 bg-gray-800 hover:bg-purple-600 rounded-xl transition-all duration-200 border border-white/5 hover:border-purple-400 hover:cursor-pointer">
-          <span class="text-lg font-bold text-white group-hover:scale-110 transition-transform">Mode Spécial</span>
-          <span class="text-xs text-gray-400 group-hover:text-purple-100">Juste un mode de geek</span>
-        </button>
-      </form>
-
-      <p class="mt-6 text-[10px] uppercase tracking-widest text-gray-500">
-        Le mode sera verrouillé jusqu'au prochain reset
-      </p>
-    </div>
-  </div>
-<?php // endif; 
-?>
-Choix mode-->
 
 <body class="h-14 bg-linear-to-r from-cyan-500 to-blue-500">
   <nav class="bg-white/15">
@@ -207,9 +260,6 @@ Choix mode-->
           <div class="flex items-baseline space-x-4">
             <!--Button modale rules-->
             <button command="show-modal" commandfor="rules" class="text-white hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Régle</button>
-            <!--Button modale Leaderboard-->
-            <button command="show-modal" commandfor="leaderboard" class="text-white hover:bg-white/50 hover:text-black px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:cursor-pointer">Classement</button>
-            <!---->
             <div class="flex items-center space-x-6">
               <div class="flex items-center">
                 <div class="text-White px-3 py-2 text-sm font-medium border border-white/10 rounded-l-md bg-white/5 border-r-0">
@@ -230,9 +280,17 @@ Choix mode-->
               <el-menu anchor="bottom end" popover class="w-56 origin-top-right rounded-md bg-gray-800 outline-1 -outline-offset-1 outline-white/10 transition transition-discrete [--anchor-gap:--spacing(2)] data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in">
                 <div class="py-1">
                   <!--Button modale profil-->
-                  <button command="show-modal" commandfor="dialog" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Profil</button>
-                  <!--Button modale connection-->
-                  <button command="show-modal" commandfor="login" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Se connecter</button>
+                  <?php if ($isLoggedIn): ?>
+                    <button command="show-modal" commandfor="dialog" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Profil</button>
+                    <!--Button déconnection-->
+                    <form method="POST" action="">
+                      <button type="submit" name="logout" class="w-full text-center block px-4 py-2 text-sm text-red-400 font-semibold hover:bg-red-500/10 hover:text-red-300 hover:cursor-pointer">
+                        Se déconnecter
+                      </button>
+                    </form>
+                  <?php else: ?>
+                    <button command="show-modal" commandfor="login" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Se connecter</button>
+                  <?php endif; ?>
                 </div>
               </el-menu>
             </el-dropdown>
@@ -262,35 +320,35 @@ Choix mode-->
               </p>
             </div>
           </div>
-          <div class="grid grid-cols-3 gap-4 mb-6">
-            <button type="submit" name="choix" value="pierre" command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-stone-400 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
-              <span class="text-6xl block mb-2">🪨</span>
-              <span class="text-xl font-semibold">Pierre</span>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6">
+            <button type="submit" name="choix" value="pierre" class="hover:cursor-pointer bg-gradient-to-br from-stone-400 to-stone-700 hover:from-stone-700 hover:to-stone-900 text-white rounded-xl p-4 sm:p-6 transform hover:scale-105 transition shadow-lg">
+              <span class="text-4xl sm:text-6xl block mb-2">🪨</span>
+              <span class="text-lg sm:text-xl font-semibold">Pierre</span>
             </button>
 
-            <button type="submit" name="choix" value="feuille" command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-green-400 to-green-700 hover:from-green-600 hover:to--900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
-              <span class="text-6xl block mb-2">🍃​</span>
-              <span class="text-xl font-semibold">Feuille</span>
+            <button type="submit" name="choix" value="feuille" class="hover:cursor-pointer bg-gradient-to-br from-green-400 to-green-700 hover:from-green-600 hover:to-green-900 text-white rounded-xl p-4 sm:p-6 transform hover:scale-105 transition shadow-lg">
+              <span class="text-4xl sm:text-6xl block mb-2">🍃</span>
+              <span class="text-lg sm:text-xl font-semibold">Feuille</span>
             </button>
 
-            <button type="submit" name="choix" value="ciseaux" command="show-modal" commandfor="resultat-manche" class="hover:cursor-pointer bg-gradient-to-br from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg">
-              <span class="text-6xl block mb-2">​✂️​</span>
-              <span class="text-xl font-semibold">Ciseaux</span>
+            <button type="submit" name="choix" value="ciseaux" class="col-span-2 sm:col-span-1 hover:cursor-pointer bg-gradient-to-br from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 text-white rounded-xl p-4 sm:p-6 transform hover:scale-105 transition shadow-lg">
+              <span class="text-4xl sm:text-6xl block mb-2">✂️</span>
+              <span class="text-lg sm:text-xl font-semibold">Ciseaux</span>
             </button>
 
-            <div id="special-container" class="col-span-3 flex justify-center gap-4 <?= $_SESSION['mode'] === 'special' ? '' : 'hidden' ?>">
+            <?php if ($_SESSION['mode'] === 'special'): ?>
+              <div id="special-container" class="col-span-2 sm:col-span-3 flex flex-row gap-3 sm:gap-4 justify-center">
+                <button type="submit" name="choix" value="lezard" class="flex-1 hover:cursor-pointer bg-gradient-to-br from-purple-400 to-purple-700 hover:from-purple-600 hover:to-purple-900 text-white rounded-xl p-4 sm:p-6 transform hover:scale-105 transition shadow-lg">
+                  <span class="text-4xl sm:text-6xl block mb-2">🦎</span>
+                  <span class="text-lg sm:text-xl font-semibold">Lézard</span>
+                </button>
 
-              <button type="submit" name="choix" value="lezard" class="special-option hover:cursor-pointer bg-gradient-to-br from-purple-400 to-purple-700 hover:from-purple-600 hover:to-purple-900 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg w-1/3">
-                <span class="text-6xl block mb-2">🦎</span>
-                <span class="text-xl font-semibold">Lézard</span>
-              </button>
-
-              <button type="submit" name="choix" value="spock" class="special-option hover:cursor-pointer bg-gradient-to-br from-yellow-400 to-yellow-600 hover:from-yellow-600 hover:to-yellow-800 text-white rounded-xl p-6 transform hover:scale-105 transition shadow-lg w-1/3">
-                <span class="text-6xl block mb-2">🖖</span>
-                <span class="text-xl font-semibold">Spock</span>
-              </button>
-
-            </div>
+                <button type="submit" name="choix" value="spock" class="flex-1 hover:cursor-pointer bg-gradient-to-br from-yellow-400 to-yellow-600 hover:from-yellow-600 hover:to-yellow-800 text-white rounded-xl p-4 sm:p-6 transform hover:scale-105 transition shadow-lg">
+                  <span class="text-4xl sm:text-6xl block mb-2">🖖</span>
+                  <span class="text-lg sm:text-xl font-semibold">Spock</span>
+                </button>
+              </div>
+            <?php endif; ?>
           </div>
           <div class="flex gab-3">
             <button type="submit" name="reset" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 hover:cursor-pointer px-6 rounded-xl transition-colors transform hover:scale-105">reset</button>
@@ -371,57 +429,51 @@ Choix mode-->
     </div>
   </dialog>
 </el-dialog>
-<!--end modal leaderboard-->
+
 <!--modal connection-->
 <el-dialog>
-  <dialog id="login" aria-labelledby="dialog-title"
-    class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
-    <el-dialog-backdrop
-      class="fixed inset-0 bg-black/90 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
-    <div tabindex="0"
-      class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
-      <el-dialog-panel
-        class="relative transform overflow-hidden rounded-xl bg-gray-800 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-md data-closed:sm:translate-y-0 data-closed:sm:scale-95">
-        <div class="bg-gray-800 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
-          <div class="sm:flex sm:items-start">
-            <div class="mt-3 w-full text-center sm:mt-0 sm:text-left">
-              <h3 id="dialog-title" class="text-xl font-bold text-white">Connexion</h3>
-              <div class="mt-4">
-                <div class="flex-grow border-t border-gray-700 mb-6"></div>
-                <form action="#" class="space-y-6">
-                  <div>
-                    <label for="Identifiant" class="block mb-2 text-sm font-medium text-gray-300">Identifiant</label>
-                    <input type="text" id="Identifiant" name="username"
-                      class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-400"
-                      placeholder="Zengorax" required />
+  <dialog id="login" aria-labelledby="dialog-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
+    <el-dialog-backdrop class="fixed inset-0 bg-black/90 transition-opacity"></el-dialog-backdrop>
+    <div tabindex="0" class="flex min-h-full items-center justify-center p-4 text-center focus:outline-none">
+      <el-dialog-panel class="relative transform overflow-hidden rounded-xl bg-gray-800 text-left shadow-2xl sm:my-8 sm:w-full sm:max-w-md w-full">
+
+        <form action="" method="POST">
+          <div class="bg-gray-800 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+            <div class="sm:flex sm:items-start">
+              <div class="mt-3 w-full text-center sm:mt-0 sm:text-left">
+                <h3 id="dialog-title" class="text-xl font-bold text-white">Connexion</h3>
+                <div class="mt-4">
+                  <div class="flex-grow border-t border-gray-700 mb-6"></div>
+
+                  <div class="space-y-6">
+                    <div>
+                      <label for="Identifiant" class="block mb-2 text-sm font-medium text-gray-300">Identifiant</label>
+                      <input type="text" id="Identifiant" name="username" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Zengorax" required />
+                    </div>
+                    <div>
+                      <label for="password" class="block mb-2 text-sm font-medium text-gray-300">Mot de passe</label>
+                      <input type="password" id="password" name="password" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="•••••••••" required />
+                    </div>
                   </div>
-                  <div>
-                    <label for="password" class="block mb-2 text-sm font-medium text-gray-300">Mot de
-                      passe</label>
-                    <input type="password" id="password" name="password"
-                      class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 placeholder:text-gray-400"
-                      placeholder="•••••••••" required />
+
+                  <div class="mt-4 text-center">
+                    <p class="text-sm text-gray-400">
+                      Pas encore de compte ?
+                      <button type="button" command="show-modal" commandfor="register" class="text-blue-400 hover:underline">Créer un compte</button>
+                    </p>
                   </div>
-                  <div class="flex items-start"></div>
-                </form>
-                <div class="mt-4 text-center">
-                  <p class="text-sm text-gray-400">
-                    Pas encore de compte ?
-                    <button type="button" command="show-modal" commandfor="register" class="text-blue-400 hover:underline hover:cursor-pointer">
-                      Créer un compte
-                    </button>
-                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="bg-gray-700 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
-          <button type="submite" name="login_submit"
-            class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-700 sm:ml-3 sm:w-auto hover:cursor-pointer">
-            Se connecter
-          </button>
-        </div>
+
+          <div class="bg-gray-700 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
+            <button type="submit" name="login_submit" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-700 sm:ml-3 sm:w-auto">
+              Se connecter
+            </button>
+          </div>
+        </form>
+
       </el-dialog-panel>
     </div>
   </dialog>
@@ -459,15 +511,16 @@ Choix mode-->
               </div>
             </div>
           </div>
-
           <div class="bg-gray-700/50 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
             <button type="submit" name="register_submit" class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 transition sm:ml-3 sm:w-auto hover:cursor-pointer">
               Créer le compte
             </button>
-            <button type="button" command="show-modal" commandfor="login" class="mt-3 inline-flex w-full justify-center rounded-lg px-4 py-2 text-base font-medium text-gray-400 hover:text-white sm:mt-0 sm:w-auto hover:cursor-pointer">
-              Déjà inscrit ?
-            </button>
           </div>
+          <?php if (isset($error)): ?>
+            <div class="bg-red-500/20 border border-red-500 text-red-400 p-2 rounded-lg text-sm mb-4 text-center">
+              <?= $error ?>
+            </div>
+          <?php endif; ?>
         </form>
 
       </el-dialog-panel>
@@ -478,23 +531,49 @@ Choix mode-->
 <!--modal Rule-->
 <el-dialog>
   <dialog id="rules" aria-labelledby="dialog-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
-    <el-dialog-backdrop class="fixed inset-0 bg-gray-900/50 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
-    <div tabindex="0" class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
-      <el-dialog-panel class="relative transform overflow-hidden rounded-lg bg-gray-800 text-left shadow-xl outline -outline-offset-1 outline-white/10 transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg data-closed:sm:translate-y-0 data-closed:sm:scale-95">
-        <div class="bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+    <el-dialog-backdrop class="fixed inset-0 bg-gray-900/80 backdrop-blur-sm transition-opacity"></el-dialog-backdrop>
+
+    <div tabindex="0" class="flex min-h-full items-center justify-center p-4 text-center focus:outline-none">
+
+      <el-dialog-panel class="relative transform overflow-hidden rounded-2xl bg-gray-800 text-left shadow-2xl border border-white/10 transition-all w-full max-w-md sm:max-w-lg">
+
+        <div class="bg-gray-800 px-6 pt-6 pb-5 sm:p-8">
           <div class="sm:flex sm:items-start">
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-              <h3 id="dialog-title" class="text-base font-semibold text-white">Régle</h3>
+            <div class="w-full text-center sm:text-left">
+              <h3 id="dialog-title" class="text-2xl font-bold text-white flex items-center justify-center sm:justify-start gap-2">
+                <span>📜</span> Règles du Jeu
+              </h3>
+
               <div class="mt-4">
-                <div class="flex-grow border-t border-gray-400 mb-4"></div>
-                <p class="text-sm text-gray-400">Lorem ipsum dolor sit, amet consectetur adipisicing elit. Praesentium recusandae, commodi ducimus, saepe quasi fugiat voluptas reiciendis neque, porro repellendus quas quidem! Tenetur quis dolore eaque commodi esse vitae blanditiis.</p>
+                <div class="w-full border-t border-gray-700 mb-6"></div>
+
+                <div class="space-y-4 text-gray-300 text-sm sm:text-base leading-relaxed">
+                  <p>
+                    Le but est de battre le robot en choisissant un signe qui l'emporte sur le sien.
+                  </p>
+                  <ul class="list-disc list-inside space-y-1 text-gray-400 italic">
+                    <li>La <strong>Pierre</strong> écrase les ciseaux.</li>
+                    <li>La <strong>Feuille</strong> enveloppe la pierre.</li>
+                    <li>Les <strong>Ciseaux</strong> coupent la feuille.</li>
+                  </ul>
+                  <?php if ($_SESSION['mode'] === 'special'): ?>
+                    <p class="pt-2 border-t border-gray-700/50 text-purple-400 font-medium">
+                      Mode Spécial : Le lézard et Spock s'ajoutent aux règles classiques !
+                    </p>
+                  <?php endif; ?>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="bg-gray-700/25 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-          <button type="button" command="close" commandfor="rules" class="inline-flex w-full justify-center rounded-md bg-blue-500 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-400 sm:ml-3 sm:w-auto hover:cursor-pointer">Ok</button>
+
+        <div class="bg-gray-900/50 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8">
+          <button type="button" command="close" commandfor="rules"
+            class="inline-flex w-full justify-center rounded-xl bg-blue-600 px-6 py-3 text-base font-bold text-white shadow-lg hover:bg-blue-500 transition-all active:scale-95 sm:ml-3 sm:w-auto hover:cursor-pointer">
+            J'ai compris
+          </button>
         </div>
+
       </el-dialog-panel>
     </div>
   </dialog>
@@ -502,61 +581,50 @@ Choix mode-->
 <!--end modal rule-->
 <!--modal screen result-->
 <el-dialog>
-  <dialog id="resultat-manche" aria-labelledby="resultat-title"
-    class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
-    <el-dialog-backdrop
-      class="fixed inset-0 bg-black/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"></el-dialog-backdrop>
-    <div tabindex="0"
-      class="flex min-h-full items-end justify-center p-4 text-center focus:outline-none sm:items-center sm:p-0">
-      <el-dialog-panel
-        class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl shadow-gray-900/50 outline-none transition-all">
+  <dialog id="resultat-manche" aria-labelledby="resultat-title" class="fixed inset-0 size-auto max-h-none max-w-none overflow-y-auto bg-transparent backdrop:bg-transparent">
+    <el-dialog-backdrop class="fixed inset-0 bg-black/75 transition-opacity"></el-dialog-backdrop>
+
+    <div tabindex="0" class="flex min-h-full items-center justify-center p-4 text-center focus:outline-none">
+
+      <el-dialog-panel class="relative transform overflow-hidden rounded-xl bg-gray-900 text-left shadow-2xl w-full max-w-sm sm:max-w-lg">
         <div class="bg-gray-900 px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
           <div class="text-center">
-
             <?php
-
             $res = $_SESSION['dernier_message'] ?? 'En attente...';
             $p_move = $_SESSION['joueur'][array_key_last($_SESSION['joueur'])] ?? '';
             $r_move = $_SESSION['hal'][array_key_last($_SESSION['hal'])] ?? '';
-
-            $couleurs = [
-              'Victoire' => 'text-green-400',
-              'Perdu' => 'text-red-400',
-              'Égalité' => 'text-yellow-400'
-            ];
-
-            $colorClass = $couleurs[$res] ?? 'text-gray-400';
-
+            $colorClass = ($res == 'Victoire') ? 'text-green-400' : (($res == 'Perdu') ? 'text-red-400' : 'text-yellow-400');
             ?>
 
-            <h3 id="resultat-title" class="text-4xl font-extrabold mb-6 <?= $colorClass ?>">
+            <h3 id="resultat-title" class="text-3xl sm:text-4xl font-extrabold mb-6 <?= $colorClass ?>">
               <?= $res ?>
             </h3>
 
-            <div class="flex justify-around items-center space-x-8 mb-8">
+            <div class="flex flex-col sm:flex-row justify-around items-center gap-6 sm:gap-8 mb-8">
               <div class="text-center">
-                <p class="text-lg font-semibold text-gray-300 mb-2">Vous</p>
-                <span class="text-8xl block">
+                <p class="text-sm sm:text-lg font-semibold text-gray-400 mb-1">Vous</p>
+                <span class="text-7xl sm:text-8xl block">
                   <?= isset($emojis[$p_move]) ? $emojis[$p_move] : '❓' ?>
                 </span>
-                <p class="text-xl font-bold text-white mt-2"><?= ucfirst($p_move) ?></p>
+                <p class="text-lg sm:text-xl font-bold text-white mt-1"><?= ucfirst($p_move) ?></p>
               </div>
 
-              <span class="text-4xl font-extrabold text-gray-500">VS</span>
+              <span class="text-2xl sm:text-4xl font-black text-gray-700 sm:text-gray-500 italic">VS</span>
 
               <div class="text-center">
-                <p class="text-lg font-semibold text-gray-300 mb-2">Robot</p>
-                <span class="text-8xl block">
+                <p class="text-sm sm:text-lg font-semibold text-gray-400 mb-1">Robot</p>
+                <span class="text-7xl sm:text-8xl block">
                   <?= isset($emojis[$r_move]) ? $emojis[$r_move] : '❓' ?>
                 </span>
-                <p class="text-xl font-bold text-white mt-2"><?= ucfirst($r_move) ?></p>
+                <p class="text-lg sm:text-xl font-bold text-white mt-1"><?= ucfirst($r_move) ?></p>
               </div>
             </div>
           </div>
         </div>
-        <div class="bg-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 rounded-b-xl">
+
+        <div class="bg-gray-800 px-6 py-4 rounded-b-xl">
           <button type="button" command="close" commandfor="resultat-manche"
-            class="inline-flex w-full justify-center rounded-lg bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-md hover:bg-blue-500 hover:cursor-pointer">
+            class="w-full justify-center rounded-lg bg-blue-600 px-4 py-3 text-base font-semibold text-white shadow-md hover:bg-blue-500 hover:cursor-pointer transition">
             Continuer
           </button>
         </div>

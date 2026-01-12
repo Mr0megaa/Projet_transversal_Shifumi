@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS stats_visiteurs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip_address VARCHAR(45) NOT NULL UNIQUE,
+    victoires INT DEFAULT 0,
+    defaites INT DEFAULT 0,
+    egalites INT DEFAULT 0,
+    tours_joues INT DEFAULT 0,
+    taux_reussite DECIMAL(5, 2) DEFAULT 0.00,
+    dernier_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE = InnoDB;
