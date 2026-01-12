@@ -4,8 +4,8 @@
   }
 </script>
 <?php
-//TODO : RESPONSIVE 
-//TODO : MISE EN PLACE DE LA PAGE COMPTE
+
+
 
 session_start();
 include "./config.php";
