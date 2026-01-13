@@ -18,8 +18,7 @@ Un jeu de Shifumi moderne et interactif développé en **PHP**, **Tailwind CSS**
 
 - **Backend :** PHP 8.x
 - **Base de données :** MySQL (PDO)
-- **Frontend :** Tailwind CSS, JavaScript (ES6)
-- **Gestion de session :** PHP Sessions
+- **Frontend :** Tailwind CSS
 
 ## Installation & Configuration
 
