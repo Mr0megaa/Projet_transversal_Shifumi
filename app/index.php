@@ -10,6 +10,7 @@
 session_start();
 include "./config.php";
 include "./header.php";
+date_default_timezone_set('Europe/Paris');
 
 if (isset($_POST['login_submit'])) {
   $user = trim($_POST['username']);
@@ -309,13 +310,21 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
           <div class="flex justify-around mb-8 bg-gray-100/100 rounded-xl p-4">
             <div class="text-center" id="player">
               <p class="text-sm text-black mb-3">vous</p>
-              <p class="text-3x1 font-bold text-blue-700">
+              <p class="text-3xl font-bold text-blue-700">
                 <?= $_SESSION['nombre_de_victoire'] ?>
               </p>
             </div>
+
+            <div class="text-center" id="tour">
+              <p class="text-sm text-black mb-3">tour</p>
+              <p class="text-3xl font-bold text-gray-800">
+                <?= $_SESSION['tour'] ?>
+              </p>
+            </div>
+
             <div class="text-center" id="robot">
               <p class="text-sm text-black mb-3">robot</p>
-              <p class="text-sm font-bold text-red-600">
+              <p class="text-3xl font-bold text-red-600">
                 <?= $_SESSION['nombre_de_defaite'] ?>
               </p>
             </div>
@@ -541,7 +550,7 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
           <div class="sm:flex sm:items-start">
             <div class="w-full text-center sm:text-left">
               <h3 id="dialog-title" class="text-2xl font-bold text-white flex items-center justify-center sm:justify-start gap-2">
-                <span>📜</span> Règles du Jeu
+                <span></span> Règles du Jeu
               </h3>
 
               <div class="mt-4">
