@@ -1,3 +1,10 @@
+![Statut](https://img.shields.io/badge/Statut-Terminé-brightgreen)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-777BB4?logo=php&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
+![MySQL](https://img.shields.io/badge/Database-MySQL-orange?logo=mysql&logoColor=white)
+![MariaDB](https://img.shields.io/badge/Database-MariaDB-003545?logo=mariadb&logoColor=white)
+
 # Shifumi - Jeu de Pierre-Feuille-Ciseaux
 
 Un jeu de Shifumi moderne et interactif développé en **PHP**, **Tailwind CSS**. Ce projet propose un mode classique ainsi qu'un mode spécial incluant le "Lézard" et "Spock", inspiré de la culture populaire.
