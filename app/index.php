@@ -75,12 +75,14 @@ if (isset($_POST['select_mode'])) {
   $_SESSION['mode'] = $_POST['select_mode'];
 }
 
+//Mise en place des constantes
 define('PIERRE',  'pierre');
 define('FEUILLE', 'feuille');
 define('CISEAUX', 'ciseaux');
 define('LEZARD',  'lezard');
 define('SPOCK',   'spock');
 
+//set de la session a 0
 if (!isset($_SESSION['tour'])) $_SESSION['tour'] = 0;
 if (!isset($_SESSION['hal'])) $_SESSION['hal'] = [];
 if (!isset($_SESSION['joueur'])) $_SESSION['joueur'] = [];
@@ -91,7 +93,7 @@ if (!isset($_SESSION['debut_partie'])) {
   $_SESSION['debut_partie'] = date('H:i');
 }
 
-
+//Définition des victoires
 $regles = [
   PIERRE  => [CISEAUX, LEZARD],
   FEUILLE => [PIERRE, SPOCK],
@@ -100,11 +102,14 @@ $regles = [
   SPOCK   => [CISEAUX, PIERRE],
 ];
 
+//Set des possibilité en fonction du mode utilisé
 $choix_possibles = [PIERRE, FEUILLE, CISEAUX];
 if ($_SESSION['mode'] === 'special') {
   $choix_possibles = [PIERRE, FEUILLE, CISEAUX, LEZARD, SPOCK];
 }
 
+
+//Tableau des faiblesses
 $contre_complet = [
   PIERRE  => [FEUILLE, SPOCK],
   FEUILLE => [CISEAUX, LEZARD],
@@ -113,6 +118,7 @@ $contre_complet = [
   LEZARD  => [PIERRE, CISEAUX]
 ];
 
+//Anti Cheat pour Hal
 $contre = [];
 foreach ($contre_complet as $signe => $reponses) {
   $contre[$signe] = array_intersect($reponses, $choix_possibles);
@@ -123,28 +129,38 @@ foreach ($contre_complet as $signe => $reponses) {
 $player = $_POST['choix'] ?? NULL;
 
 if ($player) {
+  //calcule du cycle
   $position = $_SESSION['tour'] % 5;
   $hal = NULL;
-
+  //tour 1 Hal utilise aléatoirement l'un des choix possibles.
   if ($position == 0) {
     $hal = $choix_possibles[array_rand($choix_possibles)];
+    //tour 2 Hal prend en compte le choix du joueur lors du premier tour et le contre.
   } elseif ($position == 1) {
     $dernier_coup_joueur = end($_SESSION['joueur']);
     $possibilites = $contre[$dernier_coup_joueur] ?? [PIERRE];
     $hal = $possibilites[array_rand($possibilites)];
+    //tour 3 Hal utilise le choix qu'il a utilisée lors du premier tour
   } elseif ($position == 2) {
     $tour2 = $_SESSION['tour'] - 2;
     $hal = $_SESSION['hal'][$tour2] ?? $choix_possibles[array_rand($choix_possibles)];
+    //tour 4 Hal compte le nombre d'utilisation des choix et utilise l'un des choix les moins utilisés.
   } elseif ($position == 3) {
+    // initiation du compteur de choix 
     $compte = [];
     foreach ($choix_possibles as $nom) {
       $compte[$nom] = 0;
+      //chaque choix est set a 0
     }
     foreach ($_SESSION['hal'] as $coup) {
       if (isset($compte[$coup])) $compte[$coup]++;
+      //pour chaque choix utilisé précédemment, ajoute +1
     }
+    //trie de façon croisante le tableau de compte
     asort($compte);
+    //recuperation de la possition 0 du tableau
     $hal = array_key_first($compte);
+    //tour 5 Hal utilise le choix que le joueur a fait au tour précédent 
   } else {
     $tour_precedent = $_SESSION['tour'] - 1;
     $hal = $_SESSION['joueur'][$tour_precedent] ?? PIERRE;
@@ -154,6 +170,7 @@ if ($player) {
   $_SESSION['hal'][] = $hal;
   $_SESSION['tour']++;
 
+  //Calcule des victoires, égalités, défaites.
   if ($player == $hal) {
     $message = "Égalité";
     $_SESSION['nombre_d_egalite']++;
@@ -174,7 +191,7 @@ if ($player) {
   exit;
 }
 
-
+//Envois des données pour la BDD
 if (isset($_POST['reset'])) {
   $ip_adresse = $_SERVER['REMOTE_ADDR'];
   $tour_totals = $_SESSION['nombre_de_victoire'] + $_SESSION['nombre_de_defaite'] + $_SESSION['nombre_d_egalite'];
