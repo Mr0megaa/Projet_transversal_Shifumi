@@ -282,7 +282,8 @@ $emojis = [PIERRE => "🪨", FEUILLE => "🍃", CISEAUX => "✂️", LEZARD => "
                 <div class="py-1">
                   <!--Button modale profil-->
                   <?php if ($isLoggedIn): ?>
-                    <button command="show-modal" commandfor="dialog" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">Profil</button>
+                    <a href="./profil.php" class="w-full block px-4 py-2 text-sm text-gray-300 focus:bg-white/5 focus:text-white focus:outline-hidden hover:cursor-pointer">
+                      Profil</a>
                     <!--Button déconnection-->
                     <form method="POST" action="">
                       <button type="submit" name="logout" class="w-full text-center block px-4 py-2 text-sm text-red-400 font-semibold hover:bg-red-500/10 hover:text-red-300 hover:cursor-pointer">
