@@ -1,10 +1,10 @@
-# Shifumi Expert - Jeu de Pierre-Feuille-Ciseaux ++
+# Shifumi - Jeu de Pierre-Feuille-Ciseaux
 
 Un jeu de Shifumi moderne et interactif développé en **PHP**, **Tailwind CSS** et **JavaScript**. Ce projet propose un mode classique ainsi qu'un mode spécial incluant le "Lézard" et "Spock", inspiré de la culture populaire.
 
 ## Fonctionnalités
 
-- **Deux Modes de Jeu :** \* _Classique_ : Pierre, Feuille, Ciseaux.
+- **Deux Modes de Jeu :** _Classique_ : Pierre, Feuille, Ciseaux.
   - _Spécial_ : Ajoute Lézard et Spock pour plus de stratégie.
 - **Intelligence Artificielle :** Le robot utilise un algorithme basé sur vos coups précédents (séquence de 5 positions) pour tenter de vous battre.
 - **Tableau de Bord en temps réel :**
@@ -49,13 +49,16 @@ CREATE TABLE IF NOT EXISTS `stats_visiteurs` (
   `taux_reussite` decimal(5,2) DEFAULT 0,
   `last_update` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-3. Connexion (config.php)
+```
+
+## 3. Connexion (config.php)
+
 Créez un fichier config.php à la racine et configurez vos accès :
 
-PHP
+```PHP
 
 <?php
-$host = 'votre_serveur'; // ex: localhost ou sqlXXX.infinityfree.com
+$host = 'votre_serveur';
 $db   = 'votre_bdd';
 $user = 'votre_utilisateur';
 $pass = 'votre_mot_de_passe';
@@ -67,24 +70,10 @@ try {
     die("Erreur : " . $e->getMessage());
 }
 ?>
-4. Mise en ligne
-Téléversez tous les fichiers dans le dossier htdocs de votre serveur.
+```
 
-Assurez-vous que le fichier header.php est présent pour le rendu des styles.
+## Auteur
 
- Règles du jeu (Mode Spécial)
-Ciseaux coupent Feuille et décapitent Lézard.
-
-Feuille recouvre Pierre et repousse Spock.
-
-Pierre écrase Ciseaux et écrase Lézard.
-
-Lézard empoisonne Spock et mange Feuille.
-
-Spock écrabouille Ciseaux et vaporise Pierre.
-
- Auteur
 Zengorax
 Mr0megaa
 giregls
-```
