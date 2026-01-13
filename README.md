@@ -1,18 +1,17 @@
 # Shifumi - Jeu de Pierre-Feuille-Ciseaux
 
-Un jeu de Shifumi moderne et interactif développé en **PHP**, **Tailwind CSS** et **JavaScript**. Ce projet propose un mode classique ainsi qu'un mode spécial incluant le "Lézard" et "Spock", inspiré de la culture populaire.
+Un jeu de Shifumi moderne et interactif développé en **PHP**, **Tailwind CSS**. Ce projet propose un mode classique ainsi qu'un mode spécial incluant le "Lézard" et "Spock", inspiré de la culture populaire.
 
 ## Fonctionnalités
 
 - **Deux Modes de Jeu :** _Classique_ : Pierre, Feuille, Ciseaux.
   - _Spécial_ : Ajoute Lézard et Spock pour plus de stratégie.
-- **Intelligence Artificielle :** Le robot utilise un algorithme basé sur vos coups précédents (séquence de 5 positions) pour tenter de vous battre.
+- **Intelligence Artificielle :** Le robot utilise un algorithme
+
 - **Tableau de Bord en temps réel :**
   - Compteur de victoires (Joueur vs Robot).
   - Compteur de tours dynamique.
-  - Heure de début de session (Fuseau horaire : Europe/Paris).
-- **Classement & Statistiques :** Enregistrement des statistiques par adresse IP lors de la réinitialisation de la session (via base de données MySQL).
-- **Interface Responsive :** Design moderne conçu avec **Tailwind CSS**, entièrement compatible mobile et tablette.
+  - Heure de début de session.
 
 ## Technologies utilisées
 
@@ -24,7 +23,7 @@ Un jeu de Shifumi moderne et interactif développé en **PHP**, **Tailwind CSS**
 
 ### 1. Prérequis
 
-- Un serveur local (XAMPP, WAMP, MAMP) ou un hébergement distant (type InfinityFree).
+- Un serveur local (XAMPP, WAMP, MAMP).
 - Une base de données MySQL.
 
 ### 2. Configuration de la Base de Données
